@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Session, SessionStore } from './lib/types'
 import { loadStore, saveStore, getActiveSession } from './lib/storage'
 import { optimize, OptimizeResult } from './lib/optimizer'
+import { convertSession } from './lib/units'
 import SessionPanel from './components/SessionPanel'
 import StocksTable from './components/StocksTable'
 import PartsTable from './components/PartsTable'
@@ -68,6 +69,12 @@ function App() {
     setOptimizeResult(result)
   }
 
+  function handleUnitToggle(newUnit: 'mm' | 'in'): void {
+    if (!activeSession || activeSession.unit === newUnit) return
+    const converted = convertSession(activeSession, newUnit)
+    updateActiveSession({ ...converted })
+  }
+
   function handleStoreChange(updatedStore: SessionStore): void {
     saveStore(updatedStore)
     setStore(updatedStore)
@@ -95,6 +102,24 @@ function App() {
         <div className="w-1/2 border-r border-gray-200 p-4 overflow-auto flex flex-col gap-6">
           {activeSession && (
             <>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-600">Units</span>
+                <div className="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm">
+                  {(['mm', 'in'] as const).map(u => (
+                    <button
+                      key={u}
+                      onClick={() => handleUnitToggle(u)}
+                      className={`px-3 py-1 transition-colors ${
+                        activeSession.unit === u
+                          ? 'bg-blue-600 text-white font-medium'
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {u}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <ImportExport
                 session={activeSession}
                 onImport={(stocks, parts) => updateActiveSession({ stocks, parts })}
