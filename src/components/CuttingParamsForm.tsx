@@ -1,4 +1,4 @@
-import { CuttingParams } from '../lib/types'
+import type { CuttingParams } from '../lib/types'
 
 interface CuttingParamsFormProps {
   params: CuttingParams
@@ -68,7 +68,7 @@ export default function CuttingParamsForm({ params, onChange }: CuttingParamsFor
             onBlur={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
           />
           <select
-            value={KERF_PRESETS.includes(params.kerfWidth) ? params.kerfWidth : ''}
+            value=""
             onChange={e => {
               if (e.target.value !== '') update('kerfWidth', parseFloat(e.target.value))
             }}
