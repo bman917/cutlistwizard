@@ -32,7 +32,7 @@ export default function OptimizeButton({ stocks, parts, onOptimize }: OptimizeBu
             }
           : {
               backgroundColor: 'var(--color-amber)',
-              color: '#1c1f26',
+              color: '#ffffff',
               boxShadow: '0 0 0 0 var(--color-amber-glow)',
             }),
       }}

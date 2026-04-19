@@ -120,7 +120,7 @@ function App() {
                     border: 'none',
                     cursor: 'pointer',
                     backgroundColor: active ? 'var(--color-amber)' : 'transparent',
-                    color: active ? '#1c1f26' : 'var(--color-text-muted)',
+                    color: active ? '#ffffff' : 'var(--color-text-muted)',
                     fontWeight: active ? 500 : 400,
                     transition: 'all 150ms ease',
                   }}
@@ -180,7 +180,7 @@ function App() {
                         fontFamily: 'var(--font-mono)',
                         transition: 'all 150ms ease',
                         backgroundColor: activeSession.unit === u ? 'var(--color-amber)' : 'transparent',
-                        color: activeSession.unit === u ? '#1c1f26' : 'var(--color-text-secondary)',
+                        color: activeSession.unit === u ? '#ffffff' : 'var(--color-text-secondary)',
                         fontWeight: activeSession.unit === u ? '600' : '400',
                         padding: '4px 12px',
                         border: 'none',

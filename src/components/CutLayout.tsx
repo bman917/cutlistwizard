@@ -93,7 +93,7 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
         width={stockWidth}
         height={stockHeight}
         fill="none"
-        stroke="#d4a042"
+        stroke="var(--color-amber)"
         strokeWidth={Math.max(1, stockWidth * 0.002)}
         strokeOpacity={0.5}
       />

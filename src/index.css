@@ -6,7 +6,7 @@
   --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   --color-danger: #c0392b;
   --color-danger-hover: #a93226;
-  --color-amber-glow: rgba(212, 160, 66, 0.25);
+  --color-amber-glow: rgba(91, 141, 184, 0.3);
 }
 
 /* Dark theme */
@@ -16,8 +16,8 @@
   --color-panel-alt: #2a2d37;
   --color-border: #353945;
   --color-border-subtle: #2e3240;
-  --color-amber: #d4a042;
-  --color-amber-hover: #e0b05a;
+  --color-amber: #5b8db8;
+  --color-amber-hover: #6fa0cc;
   --color-text-primary: #f0ede8;
   --color-text-secondary: #9a9fb0;
   --color-text-muted: #5c6278;
@@ -32,8 +32,8 @@
   --color-panel-alt: #4c5060;
   --color-border: #5a5e70;
   --color-border-subtle: #525666;
-  --color-amber: #d4a042;
-  --color-amber-hover: #e0b05a;
+  --color-amber: #5b8db8;
+  --color-amber-hover: #6fa0cc;
   --color-text-primary: #f0ede8;
   --color-text-secondary: #c0c4d0;
   --color-text-muted: #8a8fa2;
@@ -48,8 +48,8 @@
   --color-panel-alt: #f5f3ef;
   --color-border: #d4cfc8;
   --color-border-subtle: #e0dbd4;
-  --color-amber: #b8860b;
-  --color-amber-hover: #a07808;
+  --color-amber: #3d6e96;
+  --color-amber-hover: #2f5a7e;
   --color-text-primary: #1c1f26;
   --color-text-secondary: #4a4e5e;
   --color-text-muted: #888a98;

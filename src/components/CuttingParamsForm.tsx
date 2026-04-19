@@ -116,14 +116,14 @@ export default function CuttingParamsForm({ params, onChange }: CuttingParamsFor
                   fontFamily: 'var(--font-sans)',
                   fontWeight: active ? 500 : 400,
                   backgroundColor: active ? 'var(--color-amber)' : 'transparent',
-                  color: active ? '#1c1f26' : 'var(--color-text-secondary)',
+                  color: active ? '#ffffff' : 'var(--color-text-secondary)',
                   border: 'none',
                   borderLeft: idx > 0 ? '1px solid var(--color-border)' : 'none',
                   cursor: 'pointer',
                   transition: 'all 150ms ease',
                 }}
                 onMouseEnter={e => {
-                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(212,160,66,0.1)'
+                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(91,141,184,0.1)'
                 }}
                 onMouseLeave={e => {
                   if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'

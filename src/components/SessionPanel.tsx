@@ -197,7 +197,7 @@ export default function SessionPanel({ store, onStoreChange, onClose }: SessionP
                     <button
                       onClick={() => handleLoad(session.id)}
                       style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '3px 6px', borderRadius: '3px', transition: 'all 150ms ease', fontFamily: 'var(--font-sans)' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-amber)'; (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(212,160,66,0.08)' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-amber)'; (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(91,141,184,0.1)' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)'; (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}
                     >
                       Load
