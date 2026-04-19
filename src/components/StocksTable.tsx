@@ -75,10 +75,10 @@ export default function StocksTable({ stocks, unit, onChange }: StocksTableProps
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
               <th style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500, textAlign: 'left', paddingBottom: '6px', paddingRight: '8px' }}>
-                Width <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>({unit})</span>
+                Length <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>({unit})</span>
               </th>
               <th style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500, textAlign: 'left', paddingBottom: '6px', paddingRight: '8px' }}>
-                Height <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>({unit})</span>
+                Width <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>({unit})</span>
               </th>
               <th style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500, textAlign: 'left', paddingBottom: '6px', paddingRight: '8px' }}>
                 Qty <span style={{ opacity: 0.5, fontWeight: 400 }}>(0&nbsp;=&nbsp;∞)</span>
