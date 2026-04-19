@@ -39,7 +39,7 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
   const vbW = stockWidth + m * 2
   const vbH = stockHeight + m * 2
   const fs = Math.min(stockWidth, stockHeight) * 0.028  // font size
-  const stroke = Math.max(0.5, stockWidth * 0.001)
+  const stroke = Math.min(stockWidth, stockHeight) * 0.002
 
   return (
     <svg
