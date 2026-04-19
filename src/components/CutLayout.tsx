@@ -25,78 +25,90 @@ function buildColorMap(sheets: SheetResult[]): Map<string, string> {
   return map
 }
 
+function fmt(n: number): string {
+  return n % 1 === 0 ? n.toLocaleString() : parseFloat(n.toFixed(4)).toLocaleString()
+}
+
 function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<string, string> }) {
   const { stockWidth, stockHeight, placedParts } = sheet
 
+  // Margin for dimension labels
+  const mLeft = stockWidth * 0.055
+  const mTop = stockHeight * 0.07
+  const vbW = stockWidth + mLeft
+  const vbH = stockHeight + mTop
+  const fs = Math.min(stockWidth, stockHeight) * 0.028  // font size
+  const stroke = Math.max(0.5, stockWidth * 0.001)
+
   return (
     <svg
-      viewBox={`0 0 ${stockWidth} ${stockHeight}`}
-      style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '4px', overflow: 'hidden' }}
+      viewBox={`0 0 ${vbW} ${vbH}`}
+      style={{ width: '100%', height: 'auto', display: 'block' }}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Waste background */}
-      <rect x={0} y={0} width={stockWidth} height={stockHeight} fill="var(--color-cutting-mat)" />
+      {/* Label area background */}
+      <rect x={0} y={0} width={vbW} height={vbH} fill="#f5f4f1" />
 
-      {/* Subtle dot grid on waste area */}
-      <defs>
-        <pattern id="dotgrid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"
-          patternTransform={`scale(${stockWidth / 400})`}>
-          <circle cx="10" cy="10" r="0.8" fill="var(--color-cutting-mat-dot)" />
-        </pattern>
-      </defs>
-      <rect x={0} y={0} width={stockWidth} height={stockHeight} fill="url(#dotgrid)" />
+      {/* Sheet waste background */}
+      <rect x={mLeft} y={mTop} width={stockWidth} height={stockHeight} fill="#e8e6e1" />
 
       {/* Placed parts */}
       {placedParts.map((p, i) => {
         const key = p.label || p.partId
         const fill = colorMap.get(key) ?? PALETTE[0]
-        const minDim = Math.min(p.width, p.height)
-        const maxFont = Math.min(stockWidth, stockHeight) * 0.08
-        const fontSize = Math.min(minDim * 0.12, maxFont)
-        const cx = p.x + p.width / 2
-        const cy = p.y + p.height / 2
+        const px = mLeft + p.x
+        const py = mTop + p.y
+        const cx = px + p.width / 2
+        const cy = py + p.height / 2
         const label = p.label || 'Part'
-        const dims = `${p.width}×${p.height}`
 
         return (
           <g key={i}>
-            <rect
-              x={p.x}
-              y={p.y}
-              width={p.width}
-              height={p.height}
-              fill={fill}
-              fillOpacity={0.82}
-              stroke="#1a1d23"
-              strokeWidth={Math.max(1, stockWidth * 0.0015)}
-            />
+            {/* Part fill */}
+            <rect x={px} y={py} width={p.width} height={p.height}
+              fill={fill} fillOpacity={0.55} stroke={fill} strokeWidth={stroke} strokeOpacity={0.9} />
+
+            {/* Part label centered */}
+            <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+              fill="#1a1a1a" fontSize={fs * 0.85} fontFamily="'DM Sans', sans-serif" fontWeight="500">
+              {label}
+            </text>
+
+            {/* Width dimension — top edge */}
+            <text x={cx} y={py + fs * 0.9} textAnchor="middle" dominantBaseline="middle"
+              fill="#444" fontSize={fs * 0.7} fontFamily="'DM Mono', monospace">
+              {fmt(p.width)}
+            </text>
+
+            {/* Height dimension — left edge, rotated */}
             <text
-              x={cx}
-              y={cy}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="rgba(255,255,255,0.92)"
-              fontSize={fontSize}
-              fontFamily="'DM Mono', monospace"
+              x={px + fs * 0.9} y={cy}
+              textAnchor="middle" dominantBaseline="middle"
+              fill="#444" fontSize={fs * 0.7} fontFamily="'DM Mono', monospace"
+              transform={`rotate(-90, ${px + fs * 0.9}, ${cy})`}
             >
-              <tspan x={cx} dy={`-${fontSize * 0.6}px`}>{label}</tspan>
-              <tspan x={cx} dy={`${fontSize * 1.3}px`} fillOpacity={0.7}>{dims}</tspan>
+              {fmt(p.height)}
             </text>
           </g>
         )
       })}
 
       {/* Sheet border */}
-      <rect
-        x={0}
-        y={0}
-        width={stockWidth}
-        height={stockHeight}
-        fill="none"
-        stroke="var(--color-amber)"
-        strokeWidth={Math.max(1, stockWidth * 0.002)}
-        strokeOpacity={0.5}
-      />
+      <rect x={mLeft} y={mTop} width={stockWidth} height={stockHeight}
+        fill="none" stroke="#999" strokeWidth={stroke * 1.5} />
+
+      {/* Total width label — top margin */}
+      <text x={mLeft + stockWidth / 2} y={mTop * 0.45} textAnchor="middle" dominantBaseline="middle"
+        fill="#666" fontSize={fs * 0.75} fontFamily="'DM Mono', monospace">
+        {fmt(stockWidth)}
+      </text>
+
+      {/* Total height label — left margin, rotated */}
+      <text x={mLeft * 0.45} y={mTop + stockHeight / 2} textAnchor="middle" dominantBaseline="middle"
+        fill="#666" fontSize={fs * 0.75} fontFamily="'DM Mono', monospace"
+        transform={`rotate(-90, ${mLeft * 0.45}, ${mTop + stockHeight / 2})`}>
+        {fmt(stockHeight)}
+      </text>
     </svg>
   )
 }
@@ -184,8 +196,8 @@ export default function CutLayout({ result }: CutLayoutProps) {
       {result.errors.length > 0 && (
         <div style={{
           borderRadius: '5px',
-          backgroundColor: 'rgba(212,160,66,0.08)',
-          border: '1px solid rgba(212,160,66,0.3)',
+          backgroundColor: 'rgba(91,141,184,0.08)',
+          border: '1px solid rgba(91,141,184,0.3)',
           padding: '10px 14px',
         }}>
           <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-amber)', fontFamily: 'var(--font-sans)', marginBottom: '6px' }}>
