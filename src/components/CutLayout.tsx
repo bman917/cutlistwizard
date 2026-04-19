@@ -102,7 +102,7 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
 
 export default function CutLayout({ result }: CutLayoutProps) {
   const [page, setPage] = useState(0)
-  const [showAll, setShowAll] = useState(false)
+  const [showAll, setShowAll] = useState(true)
 
   // Empty state
   if (!result || (result.sheets.length === 0 && result.errors.length === 0)) {
