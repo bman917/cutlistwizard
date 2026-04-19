@@ -72,6 +72,7 @@ export default function PartsTable({ parts, unit, onChange }: PartsTableProps) {
       </div>
 
       {parts.length > 0 && (
+        <div className="table-scroll">
         <table className="w-full mb-2" style={{ borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -149,6 +150,7 @@ export default function PartsTable({ parts, unit, onChange }: PartsTableProps) {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       <button

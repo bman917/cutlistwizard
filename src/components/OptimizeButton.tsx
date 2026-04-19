@@ -51,7 +51,7 @@ export default function OptimizeButton({ stocks, parts, onOptimize }: OptimizeBu
         }
       }}
     >
-      Optimize
+      Generate Cut List
     </button>
   )
 }

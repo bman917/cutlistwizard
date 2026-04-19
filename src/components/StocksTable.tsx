@@ -71,6 +71,7 @@ export default function StocksTable({ stocks, unit, onChange }: StocksTableProps
       </div>
 
       {stocks.length > 0 && (
+        <div className="table-scroll">
         <table className="w-full mb-2" style={{ borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -141,6 +142,7 @@ export default function StocksTable({ stocks, unit, onChange }: StocksTableProps
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       <button
