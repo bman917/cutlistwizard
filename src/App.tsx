@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Session, SessionStore } from './lib/types'
+import type { Session, SessionStore } from './lib/types'
 import { loadStore, saveStore, getActiveSession } from './lib/storage'
-import { optimize, OptimizeResult } from './lib/optimizer'
+import { optimize } from './lib/optimizer'
+import type { OptimizeResult } from './lib/optimizer'
 import { convertSession } from './lib/units'
 import SessionPanel from './components/SessionPanel'
 import StocksTable from './components/StocksTable'
@@ -78,6 +79,7 @@ function App() {
   function handleStoreChange(updatedStore: SessionStore): void {
     saveStore(updatedStore)
     setStore(updatedStore)
+    setOptimizeResult(null)
   }
 
   return (
