@@ -51,7 +51,8 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
         const key = p.label || p.partId
         const fill = colorMap.get(key) ?? PALETTE[0]
         const minDim = Math.min(p.width, p.height)
-        const fontSize = Math.max(6, Math.min(minDim * 0.12, 28))
+        const maxFont = Math.min(stockWidth, stockHeight) * 0.08
+        const fontSize = Math.min(minDim * 0.12, maxFont)
         const cx = p.x + p.width / 2
         const cy = p.y + p.height / 2
         const label = p.label || 'Part'
