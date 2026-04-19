@@ -1,4 +1,4 @@
-import { Stock, Part } from '../lib/types'
+import type { Stock, Part } from '../lib/types'
 
 interface OptimizeButtonProps {
   stocks: Stock[]

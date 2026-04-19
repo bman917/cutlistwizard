@@ -18,9 +18,13 @@ npm run dev
 
 ## Build & Deploy
 
+**Before every push**, run a clean build to catch TypeScript errors that the local cache may hide:
+
 ```bash
-npm run build
+rm -rf node_modules/.tmp && npm run build
 ```
+
+If the build fails, fix all errors before pushing. Vercel deploys from the committed git files on push to `main` — errors invisible locally (due to stale `.tsbuildinfo` cache) will fail the Vercel build.
 
 Deploys automatically via Vercel on push to `main`.
 

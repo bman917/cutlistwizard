@@ -1,4 +1,4 @@
-import { Session, SessionStore } from './types'
+import type { Session, SessionStore } from './types'
 
 const STORAGE_KEY = 'cutlistwizard_sessions'
 

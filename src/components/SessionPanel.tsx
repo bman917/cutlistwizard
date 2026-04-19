@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Session, SessionStore } from '../lib/types'
+import type { Session, SessionStore } from '../lib/types'
 
 export interface SessionPanelProps {
   store: SessionStore

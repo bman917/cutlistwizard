@@ -115,7 +115,6 @@ describe('optimizer', () => {
   })
 
   it('8. rotation enabled — fits when rotated', () => {
-    const stock = makeStock(200, 300)
     const part = makePart(100, 400) // rotate to 400×100, fits in 200×300? No: 400>200.
     // Better: part 300×100 rotated to 100×300 fits in 200×300
     // Actually use: stock 400×200, part 100×400 → rotated: 400×100 fits in 400×200
