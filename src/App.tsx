@@ -94,9 +94,9 @@ function App() {
   return (
     <div className="h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-sans)' }}>
       {/* Header */}
-      <header style={{ backgroundColor: 'var(--color-panel)', borderBottom: '1px solid var(--color-border)' }} className="flex items-center justify-between px-5 py-3 shrink-0">
+      <header style={{ backgroundColor: 'var(--color-panel)', borderBottom: '1px solid var(--color-border)', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '0 20px', height: '48px', flexShrink: 0 }}>
+        {/* Left — logo */}
         <div className="flex items-center gap-3">
-          {/* Small logo mark */}
           <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <rect x="1" y="1" width="20" height="20" rx="3" stroke="var(--color-amber)" strokeWidth="1.5" fill="none" />
             <rect x="5" y="5" width="6" height="8" rx="1" fill="var(--color-amber)" opacity="0.85" />
@@ -107,7 +107,16 @@ function App() {
             CutList<span style={{ color: 'var(--color-amber)' }}>Wizard</span>
           </h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+        {/* Center — active session name */}
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '0.9rem', fontWeight: 500, color: 'var(--color-text-primary)', letterSpacing: '0.01em' }}>
+            {activeSession?.name ?? '—'}
+          </span>
+        </div>
+
+        {/* Right — theme toggle */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ display: 'inline-flex', borderRadius: '4px', border: '1px solid var(--color-border)', overflow: 'hidden', fontSize: '0.7rem', fontFamily: 'var(--font-sans)' }}>
             {(['Light', 'Grey', 'Dark'] as const).map(t => {
               const val = t.toLowerCase() as 'light' | 'grey' | 'dark'
@@ -132,9 +141,6 @@ function App() {
             })}
           </div>
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-          {activeSession?.name ?? '—'}
-        </span>
       </header>
 
       {/* Main content */}
