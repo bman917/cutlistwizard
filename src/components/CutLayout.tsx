@@ -10,22 +10,23 @@ const PALETTE = [
   '#3aacca', '#c47a3d', '#c45b8a', '#3ab8a8', '#8ac43d',
 ]
 
-function buildColorMap(sheet: SheetResult): Map<string, string> {
+function buildColorMap(sheets: SheetResult[]): Map<string, string> {
   const map = new Map<string, string>()
   let idx = 0
-  for (const p of sheet.placedParts) {
-    const key = p.label || p.partId
-    if (!map.has(key)) {
-      map.set(key, PALETTE[idx % PALETTE.length])
-      idx++
+  for (const sheet of sheets) {
+    for (const p of sheet.placedParts) {
+      const key = p.label || p.partId
+      if (!map.has(key)) {
+        map.set(key, PALETTE[idx % PALETTE.length])
+        idx++
+      }
     }
   }
   return map
 }
 
-function SheetDiagram({ sheet }: { sheet: SheetResult }) {
+function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<string, string> }) {
   const { stockWidth, stockHeight, placedParts } = sheet
-  const colorMap = buildColorMap(sheet)
 
   return (
     <svg
@@ -150,6 +151,7 @@ export default function CutLayout({ result }: CutLayoutProps) {
   const totalSheets = result.sheets.length
   const currentPage = Math.min(page, totalSheets - 1)
   const currentSheet = result.sheets[currentPage]
+  const colorMap = buildColorMap(result.sheets)
 
   const paginationBtnStyle = (disabled: boolean): React.CSSProperties => ({
     padding: '4px 10px',
@@ -248,13 +250,13 @@ export default function CutLayout({ result }: CutLayoutProps) {
               <div style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
                 Sheet {i + 1} · {sheet.stockWidth} × {sheet.stockHeight} · {sheet.wastePercent.toFixed(1)}% waste
               </div>
-              <SheetDiagram sheet={sheet} />
+              <SheetDiagram sheet={sheet} colorMap={colorMap} />
             </div>
           ))}
         </div>
       ) : (
         <div style={{ flex: 1, minHeight: 0 }}>
-          <SheetDiagram sheet={currentSheet} />
+          <SheetDiagram sheet={currentSheet} colorMap={colorMap} />
         </div>
       )}
     </div>
