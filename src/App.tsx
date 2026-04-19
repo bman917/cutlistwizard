@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Session, SessionStore } from './lib/types'
 import { loadStore, saveStore, getActiveSession } from './lib/storage'
 import { optimize } from './lib/optimizer'
@@ -48,6 +48,14 @@ function App() {
 
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false)
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null)
+  const [theme, setTheme] = useState<'dark' | 'grey' | 'light'>(() => {
+    return (localStorage.getItem('cutlistwizard_theme') as 'dark' | 'grey' | 'light') ?? 'grey'
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('cutlistwizard_theme', theme)
+  }, [theme])
 
   const activeSession = getActiveSession(store)
 
@@ -97,6 +105,31 @@ function App() {
           <h1 style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-primary)', letterSpacing: '0.02em' }} className="text-base font-medium">
             CutList<span style={{ color: 'var(--color-amber)' }}>Wizard</span>
           </h1>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'inline-flex', borderRadius: '4px', border: '1px solid var(--color-border)', overflow: 'hidden', fontSize: '0.7rem', fontFamily: 'var(--font-sans)' }}>
+            {(['Light', 'Grey', 'Dark'] as const).map(t => {
+              const val = t.toLowerCase() as 'light' | 'grey' | 'dark'
+              const active = theme === val
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTheme(val)}
+                  style={{
+                    padding: '4px 10px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    backgroundColor: active ? 'var(--color-amber)' : 'transparent',
+                    color: active ? '#1c1f26' : 'var(--color-text-muted)',
+                    fontWeight: active ? 500 : 400,
+                    transition: 'all 150ms ease',
+                  }}
+                >
+                  {t}
+                </button>
+              )
+            })}
+          </div>
         </div>
         <button
           onClick={() => setSessionPanelOpen(true)}
