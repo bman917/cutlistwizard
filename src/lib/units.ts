@@ -1,7 +1,7 @@
 import type { Session } from './types'
 
 export function mmToIn(mm: number): number {
-  return mm / 25.4
+  return Math.round((mm / 25.4) * 10000) / 10000
 }
 
 export function inToMm(inches: number): number {
