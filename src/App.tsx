@@ -5,6 +5,7 @@ import { loadStore, saveStore, getActiveSession } from './lib/storage'
 import { optimize } from './lib/optimizer'
 import type { OptimizeResult } from './lib/optimizer'
 import { convertSession } from './lib/units'
+import { buildShareUrl, readShareHash, clearShareHash } from './lib/share'
 import SessionPanel from './components/SessionPanel'
 import StocksTable from './components/StocksTable'
 import PartsTable from './components/PartsTable'
@@ -49,6 +50,8 @@ function App() {
 
   const [activeTab, setActiveTab] = useState<'editor' | 'sessions'>('editor')
   const [mobileTab, setMobileTab] = useState<'editor' | 'sessions' | 'layout'>('editor')
+  const [sharedSession, setSharedSession] = useState<Session | null>(() => readShareHash())
+  const [shareCopied, setShareCopied] = useState(false)
   const isMobile = useIsMobile()
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null)
   const [theme, setTheme] = useState<'dark' | 'grey' | 'light'>(() => {
@@ -79,6 +82,34 @@ function App() {
     if (!activeSession) return
     const result = optimize(activeSession.stocks, activeSession.parts, activeSession.cuttingParams)
     setOptimizeResult(result)
+  }
+
+  function handleShareCopy(): void {
+    if (!activeSession) return
+    const url = buildShareUrl(activeSession)
+    navigator.clipboard.writeText(url).then(() => {
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
+    })
+  }
+
+  function handleLoadShared(): void {
+    if (!sharedSession) return
+    const newSession: Session = { ...sharedSession, id: crypto.randomUUID() }
+    const updatedStore: SessionStore = {
+      activeSessionId: newSession.id,
+      sessions: [...store.sessions, newSession],
+    }
+    saveStore(updatedStore)
+    setStore(updatedStore)
+    setOptimizeResult(null)
+    setSharedSession(null)
+    clearShareHash()
+  }
+
+  function handleDismissShared(): void {
+    setSharedSession(null)
+    clearShareHash()
   }
 
   function handleUnitToggle(newUnit: 'mm' | 'in'): void {
@@ -121,8 +152,8 @@ function App() {
           </span>
         </div>
 
-        {/* Right — theme toggle */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Right — share + theme toggle */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px' }}>
           <div style={{ display: 'inline-flex', borderRadius: '4px', border: '1px solid var(--color-border)', overflow: 'hidden', fontSize: '0.7rem', fontFamily: 'var(--font-sans)' }}>
             {(isMobile ? ['L', 'G', 'D'] : ['Light', 'Grey', 'Dark']).map((label, i) => {
               const val = (['light', 'grey', 'dark'] as const)[i]
@@ -146,8 +177,66 @@ function App() {
               )
             })}
           </div>
+          {/* Share button */}
+          {activeSession && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={handleShareCopy}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'transparent',
+                  color: shareCopied ? 'var(--color-amber)' : 'var(--color-text-muted)',
+                  fontSize: '0.7rem',
+                  fontFamily: 'var(--font-sans)',
+                  cursor: 'pointer',
+                  transition: 'all 150ms ease',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z" />
+                </svg>
+                {shareCopied ? 'Copied!' : (isMobile ? '' : 'Share')}
+              </button>
+            </div>
+          )}
         </div>
       </header>
+
+      {/* Shared session banner */}
+      {sharedSession && (
+        <div style={{
+          backgroundColor: 'rgba(91,141,184,0.12)',
+          borderBottom: '1px solid rgba(91,141,184,0.3)',
+          padding: '10px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          flexShrink: 0,
+          flexWrap: 'wrap',
+        }}>
+          <span style={{ flex: 1, fontSize: '0.8rem', fontFamily: 'var(--font-sans)', color: 'var(--color-text-secondary)' }}>
+            Shared cut list: <strong style={{ color: 'var(--color-text-primary)' }}>{sharedSession.name}</strong>
+          </span>
+          <button
+            onClick={handleLoadShared}
+            style={{ padding: '5px 14px', borderRadius: '4px', border: 'none', backgroundColor: 'var(--color-amber)', color: '#fff', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', fontWeight: 500, cursor: 'pointer' }}
+          >
+            Load
+          </button>
+          <button
+            onClick={handleDismissShared}
+            style={{ padding: '5px 10px', borderRadius: '4px', border: '1px solid var(--color-border)', backgroundColor: 'transparent', color: 'var(--color-text-muted)', fontSize: '0.75rem', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Main content */}
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: isMobile ? 'column' : 'row' }}>
