@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Stock } from '../lib/types'
+import type { Stock } from '../lib/types'
 import ConfirmDialog from './ConfirmDialog'
 
 interface StocksTableProps {
@@ -31,7 +31,7 @@ function TableInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
         borderColor: focused ? 'var(--color-amber)' : 'transparent',
         backgroundColor: focused ? 'var(--color-panel-alt)' : 'transparent',
       }}
-      onFocus={e => { setFocused(true); props.onFocus?.(e) }}
+      onFocus={e => { setFocused(true); e.target.select(); props.onFocus?.(e) }}
       onBlur={e => { setFocused(false); props.onBlur?.(e) }}
     />
   )

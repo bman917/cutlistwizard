@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Part } from '../lib/types'
+import type { Part } from '../lib/types'
 import ConfirmDialog from './ConfirmDialog'
 
 interface PartsTableProps {
@@ -32,7 +32,7 @@ function TableInput(props: React.InputHTMLAttributes<HTMLInputElement> & { mono?
         borderColor: focused ? 'var(--color-amber)' : 'transparent',
         backgroundColor: focused ? 'var(--color-panel-alt)' : 'transparent',
       }}
-      onFocus={e => { setFocused(true); props.onFocus?.(e) }}
+      onFocus={e => { setFocused(true); e.target.select(); props.onFocus?.(e) }}
       onBlur={e => { setFocused(false); props.onBlur?.(e) }}
     />
   )
