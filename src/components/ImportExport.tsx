@@ -9,6 +9,18 @@ interface ImportExportProps {
   onImport: (stocks: Session['stocks'], parts: Session['parts']) => void
 }
 
+const ghostBtnStyle: React.CSSProperties = {
+  padding: '5px 14px',
+  fontSize: '0.75rem',
+  fontFamily: 'var(--font-sans)',
+  borderRadius: '4px',
+  border: '1px solid var(--color-border)',
+  backgroundColor: 'transparent',
+  color: 'var(--color-text-secondary)',
+  cursor: 'pointer',
+  transition: 'all 150ms ease',
+}
+
 export default function ImportExport({ session, onImport }: ImportExportProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState<string | null>(null)
@@ -30,7 +42,6 @@ export default function ImportExport({ session, onImport }: ImportExportProps) {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    // Reset so the same file can be re-selected after cancel
     e.target.value = ''
 
     try {
@@ -47,7 +58,6 @@ export default function ImportExport({ session, onImport }: ImportExportProps) {
 
   function handleConfirmConvert() {
     if (!pendingImport) return
-    // Build a minimal session-shaped object so convertSession can convert dimensions
     const tempSession: Session = {
       ...session,
       unit: pendingImport.fileUnit,
@@ -65,16 +75,32 @@ export default function ImportExport({ session, onImport }: ImportExportProps) {
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <button
           onClick={handleExport}
-          className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-colors"
+          style={ghostBtnStyle}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-primary)'
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-secondary)'
+          }}
         >
           Export
         </button>
         <button
           onClick={handleImportClick}
-          className="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition-colors"
+          style={ghostBtnStyle}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-primary)'
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)'
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-secondary)'
+          }}
         >
           Import
         </button>
@@ -82,11 +108,11 @@ export default function ImportExport({ session, onImport }: ImportExportProps) {
           ref={fileInputRef}
           type="file"
           accept=".json"
-          className="hidden"
+          style={{ display: 'none' }}
           onChange={handleFileChange}
         />
         {importError && (
-          <span className="text-sm text-red-600">{importError}</span>
+          <span style={{ fontSize: '0.75rem', color: '#e07070', fontFamily: 'var(--font-sans)' }}>{importError}</span>
         )}
       </div>
 

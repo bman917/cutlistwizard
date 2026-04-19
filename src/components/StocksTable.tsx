@@ -8,6 +8,35 @@ interface StocksTableProps {
   onChange: (stocks: Stock[]) => void
 }
 
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  backgroundColor: 'transparent',
+  border: '1px solid transparent',
+  borderRadius: '3px',
+  padding: '4px 8px',
+  fontSize: '0.8125rem',
+  fontFamily: 'var(--font-mono)',
+  color: 'var(--color-text-primary)',
+  outline: 'none',
+  transition: 'border-color 150ms ease, background-color 150ms ease',
+}
+
+function TableInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [focused, setFocused] = useState(false)
+  return (
+    <input
+      {...props}
+      style={{
+        ...inputStyle,
+        borderColor: focused ? 'var(--color-amber)' : 'transparent',
+        backgroundColor: focused ? 'var(--color-panel-alt)' : 'transparent',
+      }}
+      onFocus={e => { setFocused(true); props.onFocus?.(e) }}
+      onBlur={e => { setFocused(false); props.onBlur?.(e) }}
+    />
+  )
+}
+
 export default function StocksTable({ stocks, unit, onChange }: StocksTableProps) {
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -25,12 +54,16 @@ export default function StocksTable({ stocks, unit, onChange }: StocksTableProps
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Stock Sheets</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', fontSize: '0.625rem', letterSpacing: '0.12em' }} className="uppercase">
+          Stock Sheets
+        </h2>
         {stocks.length > 0 && (
           <button
             onClick={() => setShowConfirm(true)}
-            className="text-xs text-red-500 hover:text-red-700 transition-colors"
+            style={{ color: 'var(--color-danger)', fontSize: '0.7rem', transition: 'color 150ms ease', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-danger-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-danger)')}
           >
             Clear all
           </button>
@@ -38,57 +71,67 @@ export default function StocksTable({ stocks, unit, onChange }: StocksTableProps
       </div>
 
       {stocks.length > 0 && (
-        <table className="w-full text-sm mb-2">
+        <table className="w-full mb-2" style={{ borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
           <thead>
-            <tr className="text-xs text-gray-500 border-b border-gray-200">
-              <th className="text-left pb-1 font-medium">Width ({unit})</th>
-              <th className="text-left pb-1 font-medium">Height ({unit})</th>
-              <th className="text-left pb-1 font-medium">
-                Qty
-                <span className="ml-1 text-gray-400 font-normal">(0&nbsp;=&nbsp;∞)</span>
+            <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <th style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500, textAlign: 'left', paddingBottom: '6px', paddingRight: '8px' }}>
+                Width <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>({unit})</span>
               </th>
-              <th className="pb-1 w-6" />
+              <th style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500, textAlign: 'left', paddingBottom: '6px', paddingRight: '8px' }}>
+                Height <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>({unit})</span>
+              </th>
+              <th style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500, textAlign: 'left', paddingBottom: '6px', paddingRight: '8px' }}>
+                Qty <span style={{ opacity: 0.5, fontWeight: 400 }}>(0&nbsp;=&nbsp;∞)</span>
+              </th>
+              <th style={{ paddingBottom: '6px', width: '24px' }} />
             </tr>
           </thead>
           <tbody>
-            {stocks.map(stock => (
-              <tr key={stock.id} className="border-b border-gray-100 last:border-0">
-                <td className="py-1 pr-2">
-                  <input
+            {stocks.map((stock, idx) => (
+              <tr
+                key={stock.id}
+                style={{
+                  borderBottom: idx < stocks.length - 1 ? '1px solid var(--color-border-subtle)' : 'none',
+                  transition: 'background-color 150ms ease',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <td style={{ paddingTop: '3px', paddingBottom: '3px', paddingRight: '6px' }}>
+                  <TableInput
                     type="number"
                     min="0"
                     value={stock.width}
                     onChange={e => updateRow(stock.id, 'width', parseFloat(e.target.value) || 0)}
-                    className="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                 </td>
-                <td className="py-1 pr-2">
-                  <input
+                <td style={{ paddingTop: '3px', paddingBottom: '3px', paddingRight: '6px' }}>
+                  <TableInput
                     type="number"
                     min="0"
                     value={stock.height}
                     onChange={e => updateRow(stock.id, 'height', parseFloat(e.target.value) || 0)}
-                    className="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                 </td>
-                <td className="py-1 pr-2">
-                  <div className="relative">
-                    <input
+                <td style={{ paddingTop: '3px', paddingBottom: '3px', paddingRight: '6px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <TableInput
                       type="number"
                       min="0"
                       value={stock.quantity}
                       onChange={e => updateRow(stock.id, 'quantity', parseInt(e.target.value, 10) || 0)}
-                      className="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
                     />
                     {stock.quantity === 0 && (
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">∞</span>
+                      <span style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-amber)', fontSize: '0.75rem', pointerEvents: 'none', fontFamily: 'var(--font-mono)' }}>∞</span>
                     )}
                   </div>
                 </td>
-                <td className="py-1 text-center">
+                <td style={{ paddingTop: '3px', paddingBottom: '3px', textAlign: 'center' }}>
                   <button
                     onClick={() => deleteRow(stock.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors leading-none"
+                    style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '0 4px', transition: 'color 150ms ease' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-danger)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}
                     title="Remove"
                   >
                     ×
@@ -102,7 +145,19 @@ export default function StocksTable({ stocks, unit, onChange }: StocksTableProps
 
       <button
         onClick={addRow}
-        className="mt-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+        style={{
+          marginTop: '4px',
+          fontSize: '0.75rem',
+          color: 'var(--color-text-muted)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'var(--font-sans)',
+          transition: 'color 150ms ease',
+          padding: 0,
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-amber)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}
       >
         + Add sheet
       </button>

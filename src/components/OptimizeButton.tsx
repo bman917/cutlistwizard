@@ -13,11 +13,43 @@ export default function OptimizeButton({ stocks, parts, onOptimize }: OptimizeBu
     <button
       onClick={onOptimize}
       disabled={disabled}
-      className={`w-full py-2.5 rounded-md text-sm font-semibold transition-colors ${
-        disabled
-          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          : 'bg-blue-600 hover:bg-blue-700 text-white'
-      }`}
+      style={{
+        width: '100%',
+        padding: '12px 0',
+        borderRadius: '5px',
+        fontSize: '0.875rem',
+        fontFamily: 'var(--font-mono)',
+        fontWeight: 500,
+        letterSpacing: '0.06em',
+        border: 'none',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'all 180ms ease',
+        ...(disabled
+          ? {
+              backgroundColor: 'var(--color-panel-alt)',
+              color: 'var(--color-text-muted)',
+              boxShadow: 'none',
+            }
+          : {
+              backgroundColor: 'var(--color-amber)',
+              color: '#1c1f26',
+              boxShadow: '0 0 0 0 var(--color-amber-glow)',
+            }),
+      }}
+      onMouseEnter={e => {
+        if (!disabled) {
+          const btn = e.currentTarget as HTMLButtonElement
+          btn.style.backgroundColor = 'var(--color-amber-hover)'
+          btn.style.boxShadow = '0 0 20px 4px var(--color-amber-glow)'
+        }
+      }}
+      onMouseLeave={e => {
+        if (!disabled) {
+          const btn = e.currentTarget as HTMLButtonElement
+          btn.style.backgroundColor = 'var(--color-amber)'
+          btn.style.boxShadow = '0 0 0 0 var(--color-amber-glow)'
+        }
+      }}
     >
       Optimize
     </button>

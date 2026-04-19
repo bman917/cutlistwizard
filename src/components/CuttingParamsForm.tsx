@@ -7,33 +7,74 @@ interface CuttingParamsFormProps {
 
 const KERF_PRESETS = [0, 1.6, 2.2, 2.4, 3.2, 3.8]
 
+const fieldInputStyle: React.CSSProperties = {
+  width: '6rem',
+  backgroundColor: 'var(--color-panel-alt)',
+  border: '1px solid var(--color-border)',
+  borderRadius: '4px',
+  padding: '5px 10px',
+  fontSize: '0.8125rem',
+  fontFamily: 'var(--font-mono)',
+  color: 'var(--color-text-primary)',
+  outline: 'none',
+  transition: 'border-color 150ms ease',
+}
+
+const selectStyle: React.CSSProperties = {
+  backgroundColor: 'var(--color-panel-alt)',
+  border: '1px solid var(--color-border)',
+  borderRadius: '4px',
+  padding: '5px 10px',
+  fontSize: '0.8125rem',
+  fontFamily: 'var(--font-sans)',
+  color: 'var(--color-text-secondary)',
+  outline: 'none',
+  cursor: 'pointer',
+  transition: 'border-color 150ms ease',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '0.7rem',
+  fontFamily: 'var(--font-sans)',
+  color: 'var(--color-text-muted)',
+  marginBottom: '6px',
+  letterSpacing: '0.02em',
+}
+
 export default function CuttingParamsForm({ params, onChange }: CuttingParamsFormProps) {
   function update<K extends keyof CuttingParams>(field: K, value: CuttingParams[K]) {
     onChange({ ...params, [field]: value })
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Cutting Parameters</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <h2 style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', fontSize: '0.625rem', letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>
+        Cutting Parameters
+      </h2>
 
       {/* Kerf width */}
       <div>
-        <label className="block text-xs text-gray-500 mb-1">Kerf width (mm)</label>
-        <div className="flex gap-2">
+        <label style={labelStyle}>Kerf width (mm)</label>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <input
             type="number"
             min="0"
             step="0.1"
             value={params.kerfWidth}
             onChange={e => update('kerfWidth', parseFloat(e.target.value) || 0)}
-            className="w-24 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+            style={fieldInputStyle}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--color-amber)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
           />
           <select
             value={KERF_PRESETS.includes(params.kerfWidth) ? params.kerfWidth : ''}
             onChange={e => {
               if (e.target.value !== '') update('kerfWidth', parseFloat(e.target.value))
             }}
-            className="border border-gray-200 rounded px-2 py-1 text-sm text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            style={selectStyle}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--color-amber)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
           >
             <option value="">Preset…</option>
             {KERF_PRESETS.map(v => (
@@ -45,53 +86,68 @@ export default function CuttingParamsForm({ params, onChange }: CuttingParamsFor
 
       {/* Trim per edge */}
       <div>
-        <label className="block text-xs text-gray-500 mb-1">Trim per edge (mm)</label>
+        <label style={labelStyle}>Trim per edge (mm)</label>
         <input
           type="number"
           min="0"
           step="0.5"
           value={params.trimPerEdge}
           onChange={e => update('trimPerEdge', parseFloat(e.target.value) || 0)}
-          className="w-24 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+          style={fieldInputStyle}
+          onFocus={e => (e.currentTarget.style.borderColor = 'var(--color-amber)')}
+          onBlur={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
         />
       </div>
 
       {/* Optimization goal */}
       <div>
-        <label className="block text-xs text-gray-500 mb-1">Optimization goal</label>
-        <div className="flex rounded-md overflow-hidden border border-gray-200 w-fit text-sm">
-          <button
-            type="button"
-            onClick={() => update('optimizationGoal', 'minimize-sheets')}
-            className={`px-3 py-1.5 transition-colors ${
-              params.optimizationGoal === 'minimize-sheets'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            Minimize Sheets
-          </button>
-          <button
-            type="button"
-            onClick={() => update('optimizationGoal', 'minimize-waste')}
-            className={`px-3 py-1.5 border-l border-gray-200 transition-colors ${
-              params.optimizationGoal === 'minimize-waste'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            Minimize Waste
-          </button>
+        <label style={labelStyle}>Optimization goal</label>
+        <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--color-border)', width: 'fit-content' }}>
+          {(['minimize-sheets', 'minimize-waste'] as const).map((goal, idx) => {
+            const active = params.optimizationGoal === goal
+            return (
+              <button
+                key={goal}
+                type="button"
+                onClick={() => update('optimizationGoal', goal)}
+                style={{
+                  padding: '5px 14px',
+                  fontSize: '0.75rem',
+                  fontFamily: 'var(--font-sans)',
+                  fontWeight: active ? 500 : 400,
+                  backgroundColor: active ? 'var(--color-amber)' : 'transparent',
+                  color: active ? '#1c1f26' : 'var(--color-text-secondary)',
+                  border: 'none',
+                  borderLeft: idx > 0 ? '1px solid var(--color-border)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 150ms ease',
+                }}
+                onMouseEnter={e => {
+                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(212,160,66,0.1)'
+                }}
+                onMouseLeave={e => {
+                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'
+                }}
+              >
+                {goal === 'minimize-sheets' ? 'Minimize Sheets' : 'Minimize Waste'}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Allow rotation */}
-      <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', color: 'var(--color-text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
         <input
           type="checkbox"
           checked={params.allowRotation}
           onChange={e => update('allowRotation', e.target.checked)}
-          className="rounded border-gray-300 text-blue-600 focus:ring-blue-400"
+          style={{
+            width: '14px',
+            height: '14px',
+            accentColor: 'var(--color-amber)',
+            cursor: 'pointer',
+          }}
         />
         Allow rotation
       </label>

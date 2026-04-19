@@ -1,1 +1,66 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap');
+
+:root {
+  --color-bg: #1c1f26;
+  --color-panel: #252830;
+  --color-panel-alt: #2a2d37;
+  --color-border: #353945;
+  --color-border-subtle: #2e3240;
+  --color-amber: #d4a042;
+  --color-amber-hover: #e0b05a;
+  --color-amber-glow: rgba(212, 160, 66, 0.25);
+  --color-text-primary: #f0ede8;
+  --color-text-secondary: #9a9fb0;
+  --color-text-muted: #5c6278;
+  --color-danger: #c0392b;
+  --color-danger-hover: #a93226;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Number inputs — use DM Mono */
+input[type="number"] {
+  font-family: var(--font-mono);
+}
+
+/* Remove number input spinners for a cleaner look */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.3;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Dot-grid texture for the cutting mat panel */
+.cutting-mat {
+  background-color: #1a1d23;
+  background-image: radial-gradient(circle, #353945 1px, transparent 1px);
+  background-size: 20px 20px;
+}
