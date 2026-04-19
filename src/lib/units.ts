@@ -5,7 +5,7 @@ export function mmToIn(mm: number): number {
 }
 
 export function inToMm(inches: number): number {
-  return inches * 25.4
+  return Math.round(inches * 25.4 * 100) / 100
 }
 
 export function convertSession(session: Session, toUnit: 'mm' | 'in'): Session {
