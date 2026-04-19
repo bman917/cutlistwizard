@@ -8,6 +8,7 @@ import PartsTable from './components/PartsTable'
 import CuttingParamsForm from './components/CuttingParamsForm'
 import OptimizeButton from './components/OptimizeButton'
 import CutLayout from './components/CutLayout'
+import ImportExport from './components/ImportExport'
 
 const DEFAULT_CUTTING_PARAMS = {
   kerfWidth: 1.6,
@@ -94,6 +95,11 @@ function App() {
         <div className="w-1/2 border-r border-gray-200 p-4 overflow-auto flex flex-col gap-6">
           {activeSession && (
             <>
+              <ImportExport
+                session={activeSession}
+                onImport={(stocks, parts) => updateActiveSession({ stocks, parts })}
+              />
+              <hr className="border-gray-200" />
               <StocksTable
                 stocks={activeSession.stocks}
                 unit={activeSession.unit}
