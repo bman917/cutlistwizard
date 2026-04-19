@@ -1,11 +1,13 @@
 import type { CuttingParams } from '../lib/types'
+import { mmToIn } from '../lib/units'
 
 interface CuttingParamsFormProps {
   params: CuttingParams
   onChange: (params: CuttingParams) => void
+  unit: 'mm' | 'in'
 }
 
-const KERF_PRESETS = [0, 1.6, 2.2, 2.4, 3.2, 3.8]
+const KERF_PRESETS_MM = [0, 1.6, 2.2, 2.4, 3.2, 3.8]
 
 const fieldInputStyle: React.CSSProperties = {
   width: '6rem',
@@ -42,10 +44,14 @@ const labelStyle: React.CSSProperties = {
   letterSpacing: '0.02em',
 }
 
-export default function CuttingParamsForm({ params, onChange }: CuttingParamsFormProps) {
+export default function CuttingParamsForm({ params, onChange, unit }: CuttingParamsFormProps) {
   function update<K extends keyof CuttingParams>(field: K, value: CuttingParams[K]) {
     onChange({ ...params, [field]: value })
   }
+
+  const kerfPresets = unit === 'in'
+    ? KERF_PRESETS_MM.map(v => ({ raw: mmToIn(v), label: v === 0 ? '0 (no kerf)' : `${mmToIn(v)}" (${v}mm)` }))
+    : KERF_PRESETS_MM.map(v => ({ raw: v, label: v === 0 ? '0 (no kerf)' : `${v} mm` }))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -55,12 +61,12 @@ export default function CuttingParamsForm({ params, onChange }: CuttingParamsFor
 
       {/* Kerf width */}
       <div>
-        <label style={labelStyle}>Kerf width (mm)</label>
+        <label style={labelStyle}>Kerf width ({unit})</label>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <input
             type="number"
             min="0"
-            step="0.1"
+            step={unit === 'in' ? '0.001' : '0.1'}
             value={params.kerfWidth}
             onChange={e => update('kerfWidth', parseFloat(e.target.value) || 0)}
             style={fieldInputStyle}
@@ -77,8 +83,8 @@ export default function CuttingParamsForm({ params, onChange }: CuttingParamsFor
             onBlur={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
           >
             <option value="">Preset…</option>
-            {KERF_PRESETS.map(v => (
-              <option key={v} value={v}>{v === 0 ? '0 (no kerf)' : `${v} mm`}</option>
+            {kerfPresets.map(p => (
+              <option key={p.raw} value={p.raw}>{p.label}</option>
             ))}
           </select>
         </div>
@@ -86,7 +92,7 @@ export default function CuttingParamsForm({ params, onChange }: CuttingParamsFor
 
       {/* Trim per edge */}
       <div>
-        <label style={labelStyle}>Trim per edge (mm)</label>
+        <label style={labelStyle}>Trim per edge ({unit})</label>
         <input
           type="number"
           min="0"

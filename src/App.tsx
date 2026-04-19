@@ -212,6 +212,7 @@ function App() {
               <CuttingParamsForm
                 params={activeSession.cuttingParams}
                 onChange={cuttingParams => updateActiveSession({ cuttingParams })}
+                unit={activeSession.unit}
               />
               <div className="pt-2 pb-4">
                 <OptimizeButton

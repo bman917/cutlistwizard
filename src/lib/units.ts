@@ -26,6 +26,11 @@ export function convertSession(session: Session, toUnit: 'mm' | 'in'): Session {
       width: convert(p.width),
       height: convert(p.height),
     })),
+    cuttingParams: {
+      ...session.cuttingParams,
+      kerfWidth: convert(session.cuttingParams.kerfWidth),
+      trimPerEdge: convert(session.cuttingParams.trimPerEdge),
+    },
   }
 }
 
