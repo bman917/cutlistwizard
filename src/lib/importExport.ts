@@ -12,7 +12,9 @@ export function exportSession(session: Session): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'cutlistwizard.json'
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  const safeName = session.name.replace(/[^a-z0-9]/gi, '_')
+  a.download = `${safeName}_${ts}.json`
   a.click()
   URL.revokeObjectURL(url)
 }
