@@ -33,11 +33,11 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
   const { stockWidth, stockHeight, placedParts } = sheet
 
   // Margin for dimension labels
-  const mLeft = stockWidth * 0.055
-  const mTop = stockHeight * 0.07
-  const pad = Math.max(1, stockWidth * 0.004)
-  const vbW = stockWidth + mLeft + pad
-  const vbH = stockHeight + mTop + pad
+  const m = Math.min(stockWidth, stockHeight) * 0.06
+  const mLeft = m
+  const mTop = m
+  const vbW = stockWidth + m * 2
+  const vbH = stockHeight + m * 2
   const fs = Math.min(stockWidth, stockHeight) * 0.028  // font size
   const stroke = Math.max(0.5, stockWidth * 0.001)
 
@@ -99,15 +99,15 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
         fill="none" stroke="#444" strokeWidth={stroke * 3} />
 
       {/* Total width label — top margin */}
-      <text x={mLeft + stockWidth / 2} y={mTop * 0.45} textAnchor="middle" dominantBaseline="middle"
+      <text x={m + stockWidth / 2} y={m / 2} textAnchor="middle" dominantBaseline="middle"
         fill="#666" fontSize={fs * 0.75} fontFamily="'DM Mono', monospace">
         {fmt(stockWidth)}
       </text>
 
       {/* Total height label — left margin, rotated */}
-      <text x={mLeft * 0.45} y={mTop + stockHeight / 2} textAnchor="middle" dominantBaseline="middle"
+      <text x={m / 2} y={m + stockHeight / 2} textAnchor="middle" dominantBaseline="middle"
         fill="#666" fontSize={fs * 0.75} fontFamily="'DM Mono', monospace"
-        transform={`rotate(-90, ${mLeft * 0.45}, ${mTop + stockHeight / 2})`}>
+        transform={`rotate(-90, ${m / 2}, ${m + stockHeight / 2})`}>
         {fmt(stockHeight)}
       </text>
     </svg>
