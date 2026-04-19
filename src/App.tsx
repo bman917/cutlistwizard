@@ -234,7 +234,7 @@ function App() {
         ) : (
           <>
             {/* Desktop: side-by-side */}
-            <div style={{ borderRight: '1px solid var(--color-border)', backgroundColor: 'var(--color-panel)', width: '50%', minWidth: '320px', maxWidth: '520px', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ borderRight: '1px solid var(--color-border)', backgroundColor: 'var(--color-panel)', width: '55%', minWidth: '352px', maxWidth: '572px', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
               {/* Tabs */}
               <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}>
                 {(['editor', 'sessions'] as const).map(tab => {
