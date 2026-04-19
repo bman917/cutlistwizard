@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Session, SessionStore } from './lib/types'
 import { loadStore, saveStore, getActiveSession } from './lib/storage'
 import SessionPanel from './components/SessionPanel'
+import StocksTable from './components/StocksTable'
+import PartsTable from './components/PartsTable'
+import CuttingParamsForm from './components/CuttingParamsForm'
+import OptimizeButton from './components/OptimizeButton'
 
 const DEFAULT_CUTTING_PARAMS = {
   kerfWidth: 1.6,
@@ -77,8 +81,34 @@ function App() {
       {/* Main content */}
       <main className="flex flex-1 overflow-hidden">
         {/* Left panel — Editor */}
-        <div className="w-1/2 border-r border-gray-200 p-4 overflow-auto">
-          <div className="text-sm text-gray-400 font-medium uppercase tracking-wide">Editor</div>
+        <div className="w-1/2 border-r border-gray-200 p-4 overflow-auto flex flex-col gap-6">
+          {activeSession && (
+            <>
+              <StocksTable
+                stocks={activeSession.stocks}
+                unit={activeSession.unit}
+                onChange={stocks => updateActiveSession({ stocks })}
+              />
+              <hr className="border-gray-200" />
+              <PartsTable
+                parts={activeSession.parts}
+                unit={activeSession.unit}
+                onChange={parts => updateActiveSession({ parts })}
+              />
+              <hr className="border-gray-200" />
+              <CuttingParamsForm
+                params={activeSession.cuttingParams}
+                onChange={cuttingParams => updateActiveSession({ cuttingParams })}
+              />
+              <div className="pt-2">
+                <OptimizeButton
+                  stocks={activeSession.stocks}
+                  parts={activeSession.parts}
+                  onOptimize={() => console.log('optimize')}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         {/* Right panel — Cut Layout */}
