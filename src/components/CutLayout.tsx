@@ -35,8 +35,9 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
   // Margin for dimension labels
   const mLeft = stockWidth * 0.055
   const mTop = stockHeight * 0.07
-  const vbW = stockWidth + mLeft
-  const vbH = stockHeight + mTop
+  const pad = Math.max(1, stockWidth * 0.004)
+  const vbW = stockWidth + mLeft + pad
+  const vbH = stockHeight + mTop + pad
   const fs = Math.min(stockWidth, stockHeight) * 0.028  // font size
   const stroke = Math.max(0.5, stockWidth * 0.001)
 
