@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Session, SessionStore } from './lib/types'
 import { loadStore, saveStore, getActiveSession } from './lib/storage'
+import { optimize, OptimizeResult } from './lib/optimizer'
 import SessionPanel from './components/SessionPanel'
 import StocksTable from './components/StocksTable'
 import PartsTable from './components/PartsTable'
 import CuttingParamsForm from './components/CuttingParamsForm'
 import OptimizeButton from './components/OptimizeButton'
+import CutLayout from './components/CutLayout'
 
 const DEFAULT_CUTTING_PARAMS = {
   kerfWidth: 1.6,
@@ -42,6 +44,7 @@ function App() {
   })
 
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false)
+  const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null)
 
   const activeSession = getActiveSession(store)
 
@@ -55,6 +58,13 @@ function App() {
     const updatedStore: SessionStore = { ...store, sessions: updatedSessions }
     saveStore(updatedStore)
     setStore(updatedStore)
+    setOptimizeResult(null)
+  }
+
+  function handleOptimize(): void {
+    if (!activeSession) return
+    const result = optimize(activeSession.stocks, activeSession.parts, activeSession.cuttingParams)
+    setOptimizeResult(result)
   }
 
   function handleStoreChange(updatedStore: SessionStore): void {
@@ -104,7 +114,7 @@ function App() {
                 <OptimizeButton
                   stocks={activeSession.stocks}
                   parts={activeSession.parts}
-                  onOptimize={() => console.log('optimize')}
+                  onOptimize={handleOptimize}
                 />
               </div>
             </>
@@ -112,8 +122,11 @@ function App() {
         </div>
 
         {/* Right panel — Cut Layout */}
-        <div className="w-1/2 p-4 overflow-auto">
-          <div className="text-sm text-gray-400 font-medium uppercase tracking-wide">Cut Layout</div>
+        <div className="w-1/2 p-4 overflow-auto flex flex-col">
+          <div className="text-sm text-gray-400 font-medium uppercase tracking-wide mb-4">Cut Layout</div>
+          <div className="flex-1">
+            <CutLayout result={optimizeResult} />
+          </div>
         </div>
       </main>
 
