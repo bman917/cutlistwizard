@@ -91,7 +91,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-sans)' }}>
+    <div className="h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-sans)' }}>
       {/* Header */}
       <header style={{ backgroundColor: 'var(--color-panel)', borderBottom: '1px solid var(--color-border)' }} className="flex items-center justify-between px-5 py-3 shrink-0">
         <div className="flex items-center gap-3">
