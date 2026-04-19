@@ -34,16 +34,38 @@ Users define the list of pieces they need to cut.
 | Label | Optional name (e.g. "Side Panel") |
 
 - Multiple distinct parts can be added
-- CSV import supported for bulk entry
 
 ---
 
-### 3. Cutting Parameters
+### 3. Session Editor
+
+Within an active session, users can manage stocks and parts directly in the UI.
+
+**Stocks**
+- Add a new stock sheet row
+- Edit any field (width, height, quantity) inline
+- Delete a stock sheet row
+- Clear all stock sheets
+
+**Parts**
+- Add a new part row
+- Edit any field (width, height, quantity, label) inline
+- Delete a part row
+- Clear all parts
+
+**Both**
+- "Clear all" actions require confirmation before executing
+
+---
+
+### 4. Cutting Parameters
 
 | Parameter | Description |
 |-----------|-------------|
 | Kerf width | Saw blade thickness; subtracted from available space at each cut. Default: **1.6mm** |
 | Trim (per edge) | Material trimmed from each edge of the stock sheet before cutting |
+| Optimization goal | **Minimize sheets** (use fewest sheets possible) or **Minimize waste** (maximize material utilization across sheets used). Default: Minimize sheets. |
+| Part rotation | Parts may be rotated 90° by the optimizer to achieve better fit. Default: **allowed**. |
 
 **Kerf width** is a free-input field with a dropdown of common presets:
 
@@ -58,7 +80,7 @@ Users define the list of pieces they need to cut.
 
 ---
 
-### 4. Cut Layout Output
+### 5. Cut Layout Output
 
 - Visual diagram for each stock sheet used, showing how parts are arranged
 - Each part labeled with its name and dimensions
@@ -66,10 +88,11 @@ Users define the list of pieces they need to cut.
 - Waste areas clearly marked
 - Summary: total sheets used, total waste %, cost (if prices provided)
 - Paginated — one sheet per view, navigable
+- If any part is larger than all available stock sheets, an error is shown identifying the offending part(s); no layout is generated until resolved
 
 ---
 
-### 6. Sessions
+### 6. Sessions (Management)
 
 Users can save and load named sessions, each containing a stocks list and a parts list. Sessions are stored locally in the browser and persist across page reloads.
 
@@ -88,6 +111,7 @@ Users can save and load named sessions, each containing a stocks list and a part
     {
       "id": "abc123",
       "name": "Kitchen Cabinets",
+      "unit": "mm",
       "updatedAt": "2026-04-19T10:00:00Z",
       "stocks": [...],
       "parts": [...]
@@ -98,14 +122,16 @@ Users can save and load named sessions, each containing a stocks list and a part
 
 ---
 
-### 7. Units
+### 8. Units
 
 - Metric (mm) and Imperial (inches — fractional and decimal)
-- User selects unit on first use; persists across sessions
+- Unit is set per session and stored as part of the session data
+- When creating a new session, the unit defaults to the last-used unit
+- Changing the unit within a session automatically converts all existing stock and part dimensions to the new unit
 
 ---
 
-### 5. Import / Export
+### 7. Import / Export
 
 Users can import and export their project as a JSON file.
 
@@ -114,6 +140,7 @@ Users can import and export their project as a JSON file.
 - Schema:
 ```json
 {
+  "unit": "mm",
   "stocks": [
     { "width": 2440, "height": 1220, "quantity": 3 }
   ],
@@ -122,6 +149,8 @@ Users can import and export their project as a JSON file.
   ]
 }
 ```
+- `unit` is `"mm"` or `"in"`. If omitted, the active session's unit is assumed.
+- If the imported `unit` differs from the active session's unit, the app warns the user and asks whether to convert the values or import as-is.
 - Both `stocks` and `parts` are optional — importing one does not clear the other
 - `label` is optional on each part
 - Invalid or missing fields on a row are reported; valid rows are imported
@@ -129,6 +158,7 @@ Users can import and export their project as a JSON file.
 
 **Export**
 - Downloads the current stocks and parts as a `.json` file using the same schema
+- `unit` is always written, matching the active session's unit
 - File is named `cutlistwizard.json`
 
 ---
