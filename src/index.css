@@ -2,17 +2,17 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap');
 
 :root {
-  --color-bg: #1c1f26;
-  --color-panel: #252830;
-  --color-panel-alt: #2a2d37;
-  --color-border: #353945;
-  --color-border-subtle: #2e3240;
+  --color-bg: #3c3f4a;
+  --color-panel: #444752;
+  --color-panel-alt: #4c5060;
+  --color-border: #5a5e70;
+  --color-border-subtle: #525666;
   --color-amber: #d4a042;
   --color-amber-hover: #e0b05a;
   --color-amber-glow: rgba(212, 160, 66, 0.25);
   --color-text-primary: #f0ede8;
-  --color-text-secondary: #9a9fb0;
-  --color-text-muted: #5c6278;
+  --color-text-secondary: #c0c4d0;
+  --color-text-muted: #8a8fa2;
   --color-danger: #c0392b;
   --color-danger-hover: #a93226;
   --font-mono: 'DM Mono', ui-monospace, monospace;
@@ -61,7 +61,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Dot-grid texture for the cutting mat panel */
 .cutting-mat {
-  background-color: #1a1d23;
-  background-image: radial-gradient(circle, #353945 1px, transparent 1px);
+  background-color: #383b45;
+  background-image: radial-gradient(circle, #5a5e70 1px, transparent 1px);
   background-size: 20px 20px;
 }

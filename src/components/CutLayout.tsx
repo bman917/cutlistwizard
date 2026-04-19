@@ -34,14 +34,14 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
       style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '4px', overflow: 'hidden' }}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Waste background — dark, like cutting mat */}
-      <rect x={0} y={0} width={stockWidth} height={stockHeight} fill="#1a1d23" />
+      {/* Waste background */}
+      <rect x={0} y={0} width={stockWidth} height={stockHeight} fill="#383b45" />
 
       {/* Subtle dot grid on waste area */}
       <defs>
         <pattern id="dotgrid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"
           patternTransform={`scale(${stockWidth / 400})`}>
-          <circle cx="10" cy="10" r="0.8" fill="#353945" />
+          <circle cx="10" cy="10" r="0.8" fill="#5a5e70" />
         </pattern>
       </defs>
       <rect x={0} y={0} width={stockWidth} height={stockHeight} fill="url(#dotgrid)" />
