@@ -46,7 +46,7 @@ function App() {
     return loaded
   })
 
-  const [sessionPanelOpen, setSessionPanelOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'editor' | 'sessions'>('editor')
   const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null)
   const [theme, setTheme] = useState<'dark' | 'grey' | 'light'>(() => {
     return (localStorage.getItem('cutlistwizard_theme') as 'dark' | 'grey' | 'light') ?? 'grey'
@@ -88,6 +88,7 @@ function App() {
     saveStore(updatedStore)
     setStore(updatedStore)
     setOptimizeResult(null)
+    setActiveTab('editor')
   }
 
   return (
@@ -131,41 +132,49 @@ function App() {
             })}
           </div>
         </div>
-        <button
-          onClick={() => setSessionPanelOpen(true)}
-          style={{
-            fontFamily: 'var(--font-sans)',
-            color: 'var(--color-text-secondary)',
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'transparent',
-            transition: 'all 150ms ease',
-          }}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)'
-            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-primary)'
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)'
-            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-secondary)'
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded"
-        >
-          <span>Session: {activeSession?.name ?? 'None'}</span>
-          <svg className="w-3.5 h-3.5 opacity-60" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-          </svg>
-        </button>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+          {activeSession?.name ?? '—'}
+        </span>
       </header>
 
       {/* Main content */}
       <main className="flex flex-1 overflow-hidden">
-        {/* Left panel — Editor */}
+        {/* Left panel — Editor + Sessions */}
         <div
-          style={{ borderRight: '1px solid var(--color-border)', backgroundColor: 'var(--color-panel)', width: '50%', minWidth: '320px', maxWidth: '520px', flexShrink: 0 }}
-          className="p-5 overflow-auto flex flex-col gap-6"
+          style={{ borderRight: '1px solid var(--color-border)', backgroundColor: 'var(--color-panel)', width: '50%', minWidth: '320px', maxWidth: '520px', flexShrink: 0, display: 'flex', flexDirection: 'column' }}
         >
-          {activeSession && (
-            <>
+          {/* Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}>
+            {(['editor', 'sessions'] as const).map(tab => {
+              const active = activeTab === tab
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '0.7rem',
+                    fontFamily: 'var(--font-mono)',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    border: 'none',
+                    borderBottom: active ? '2px solid var(--color-amber)' : '2px solid transparent',
+                    backgroundColor: 'transparent',
+                    color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                    cursor: 'pointer',
+                    transition: 'all 150ms ease',
+                    marginBottom: '-1px',
+                  }}
+                >
+                  {tab}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Editor tab */}
+          {activeTab === 'editor' && activeSession && (
+            <div className="p-5 overflow-auto flex flex-col gap-6" style={{ flex: 1 }}>
               <div className="flex items-center justify-between">
                 <span style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em' }} className="uppercase">Units</span>
                 <div
@@ -221,7 +230,17 @@ function App() {
                   onOptimize={handleOptimize}
                 />
               </div>
-            </>
+            </div>
+          )}
+
+          {/* Sessions tab */}
+          {activeTab === 'sessions' && (
+            <div className="p-5" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <SessionPanel
+                store={store}
+                onStoreChange={handleStoreChange}
+              />
+            </div>
           )}
         </div>
 
@@ -244,14 +263,6 @@ function App() {
         </div>
       </main>
 
-      {/* Session panel overlay */}
-      {sessionPanelOpen && (
-        <SessionPanel
-          store={store}
-          onStoreChange={handleStoreChange}
-          onClose={() => setSessionPanelOpen(false)}
-        />
-      )}
     </div>
   )
 }
