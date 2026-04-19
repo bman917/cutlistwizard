@@ -161,8 +161,8 @@ function App() {
       <main className="flex flex-1 overflow-hidden">
         {/* Left panel — Editor */}
         <div
-          style={{ borderRight: '1px solid var(--color-border)', backgroundColor: 'var(--color-panel)' }}
-          className="w-1/2 p-5 overflow-auto flex flex-col gap-6"
+          style={{ borderRight: '1px solid var(--color-border)', backgroundColor: 'var(--color-panel)', width: '50%', minWidth: '320px', maxWidth: '520px', flexShrink: 0 }}
+          className="p-5 overflow-auto flex flex-col gap-6"
         >
           {activeSession && (
             <>
@@ -225,7 +225,7 @@ function App() {
         </div>
 
         {/* Right panel — Cut Layout (cutting mat) */}
-        <div className="cutting-mat w-1/2 p-5 overflow-auto flex flex-col" style={{ borderLeft: 'none' }}>
+        <div className="cutting-mat p-5 overflow-auto flex flex-col" style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
               fontFamily: 'var(--font-mono)',
