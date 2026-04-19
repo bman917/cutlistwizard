@@ -101,6 +101,7 @@ function SheetDiagram({ sheet }: { sheet: SheetResult }) {
 
 export default function CutLayout({ result }: CutLayoutProps) {
   const [page, setPage] = useState(0)
+  const [showAll, setShowAll] = useState(false)
 
   // Empty state
   if (!result || (result.sheets.length === 0 && result.errors.length === 0)) {
@@ -195,40 +196,67 @@ export default function CutLayout({ result }: CutLayoutProps) {
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Pagination / view toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {!showAll && (
+          <>
+            <button
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={currentPage === 0}
+              style={paginationBtnStyle(currentPage === 0)}
+              onMouseEnter={e => { if (currentPage !== 0) (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)' }}
+              aria-label="Previous sheet"
+            >
+              ◀
+            </button>
+            <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--color-text-secondary)' }}>
+              {currentPage + 1} / {totalSheets}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalSheets - 1, p + 1))}
+              disabled={currentPage === totalSheets - 1}
+              style={paginationBtnStyle(currentPage === totalSheets - 1)}
+              onMouseEnter={e => { if (currentPage !== totalSheets - 1) (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)' }}
+              aria-label="Next sheet"
+            >
+              ▶
+            </button>
+          </>
+        )}
         <button
-          onClick={() => setPage(p => Math.max(0, p - 1))}
-          disabled={currentPage === 0}
-          style={paginationBtnStyle(currentPage === 0)}
-          onMouseEnter={e => { if (currentPage !== 0) (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)' }}
+          onClick={() => setShowAll(v => !v)}
+          style={{ ...paginationBtnStyle(false), marginLeft: showAll ? '0' : 'auto', padding: '4px 12px' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)' }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)' }}
-          aria-label="Previous sheet"
         >
-          ◀
+          {showAll ? 'Paginate' : 'Show all'}
         </button>
-        <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--color-text-secondary)' }}>
-          {currentPage + 1} / {totalSheets}
-        </span>
-        <button
-          onClick={() => setPage(p => Math.min(totalSheets - 1, p + 1))}
-          disabled={currentPage === totalSheets - 1}
-          style={paginationBtnStyle(currentPage === totalSheets - 1)}
-          onMouseEnter={e => { if (currentPage !== totalSheets - 1) (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-amber)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)' }}
-          aria-label="Next sheet"
-        >
-          ▶
-        </button>
-        <span style={{ marginLeft: 'auto', fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}>
-          {currentSheet.stockWidth} × {currentSheet.stockHeight} · {currentSheet.wastePercent.toFixed(1)}% waste
-        </span>
+        {!showAll && (
+          <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}>
+            {currentSheet.stockWidth} × {currentSheet.stockHeight} · {currentSheet.wastePercent.toFixed(1)}% waste
+          </span>
+        )}
       </div>
 
-      {/* SVG diagram */}
-      <div style={{ flex: 1, minHeight: 0 }}>
-        <SheetDiagram sheet={currentSheet} />
-      </div>
+      {/* SVG diagram(s) */}
+      {showAll ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
+          {result.sheets.map((sheet, i) => (
+            <div key={i}>
+              <div style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
+                Sheet {i + 1} · {sheet.stockWidth} × {sheet.stockHeight} · {sheet.wastePercent.toFixed(1)}% waste
+              </div>
+              <SheetDiagram sheet={sheet} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <SheetDiagram sheet={currentSheet} />
+        </div>
+      )}
     </div>
   )
 }
