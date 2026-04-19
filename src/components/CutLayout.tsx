@@ -3,6 +3,7 @@ import type { OptimizeResult, SheetResult } from '../lib/optimizer'
 
 interface CutLayoutProps {
   result: OptimizeResult | null
+  unit: 'mm' | 'in'
 }
 
 const PALETTE = [
@@ -29,7 +30,7 @@ function fmt(n: number): string {
   return n % 1 === 0 ? n.toLocaleString() : parseFloat(n.toFixed(4)).toLocaleString()
 }
 
-function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<string, string> }) {
+function SheetDiagram({ sheet, colorMap, unit }: { sheet: SheetResult; colorMap: Map<string, string>; unit: 'mm' | 'in' }) {
   const { stockWidth, stockHeight, placedParts } = sheet
 
   // Margin for dimension labels
@@ -78,7 +79,7 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
             {/* Width dimension — top edge */}
             <text x={cx} y={py + fs * 0.9} textAnchor="middle" dominantBaseline="middle"
               fill="#444" fontSize={fs * 0.7} fontFamily="'DM Mono', monospace">
-              {fmt(p.width)}
+              {fmt(p.width)}{unit}
             </text>
 
             {/* Height dimension — left edge, rotated */}
@@ -88,7 +89,7 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
               fill="#444" fontSize={fs * 0.7} fontFamily="'DM Mono', monospace"
               transform={`rotate(-90, ${px + fs * 0.9}, ${cy})`}
             >
-              {fmt(p.height)}
+              {fmt(p.height)}{unit}
             </text>
           </g>
         )
@@ -101,20 +102,20 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
       {/* Total width label — top margin */}
       <text x={m + stockWidth / 2} y={m / 2} textAnchor="middle" dominantBaseline="middle"
         fill="#666" fontSize={fs * 0.75} fontFamily="'DM Mono', monospace">
-        {fmt(stockWidth)}
+        {fmt(stockWidth)}{unit}
       </text>
 
       {/* Total height label — left margin, rotated */}
       <text x={m / 2} y={m + stockHeight / 2} textAnchor="middle" dominantBaseline="middle"
         fill="#666" fontSize={fs * 0.75} fontFamily="'DM Mono', monospace"
         transform={`rotate(-90, ${m / 2}, ${m + stockHeight / 2})`}>
-        {fmt(stockHeight)}
+        {fmt(stockHeight)}{unit}
       </text>
     </svg>
   )
 }
 
-export default function CutLayout({ result }: CutLayoutProps) {
+export default function CutLayout({ result, unit }: CutLayoutProps) {
   const [page, setPage] = useState(0)
   const [showAll, setShowAll] = useState(true)
 
@@ -264,13 +265,13 @@ export default function CutLayout({ result }: CutLayoutProps) {
               <div style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
                 Sheet {i + 1} · {sheet.stockWidth} × {sheet.stockHeight} · {sheet.wastePercent.toFixed(1)}% waste
               </div>
-              <SheetDiagram sheet={sheet} colorMap={colorMap} />
+              <SheetDiagram sheet={sheet} colorMap={colorMap} unit={unit} />
             </div>
           ))}
         </div>
       ) : (
         <div style={{ flex: 1, minHeight: 0 }}>
-          <SheetDiagram sheet={currentSheet} colorMap={colorMap} />
+          <SheetDiagram sheet={currentSheet} colorMap={colorMap} unit={unit} />
         </div>
       )}
     </div>

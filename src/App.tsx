@@ -239,7 +239,7 @@ function App() {
             Cut Layout
           </div>
           <div className="flex-1">
-            <CutLayout result={optimizeResult} />
+            <CutLayout result={optimizeResult} unit={activeSession?.unit ?? 'mm'} />
           </div>
         </div>
       </main>
