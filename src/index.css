@@ -25,6 +25,7 @@
 
 html, body, #root {
   height: 100%;
+  font-size: 17px;
   background-color: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
