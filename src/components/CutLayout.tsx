@@ -95,7 +95,7 @@ function SheetDiagram({ sheet, colorMap }: { sheet: SheetResult; colorMap: Map<s
 
       {/* Sheet border */}
       <rect x={mLeft} y={mTop} width={stockWidth} height={stockHeight}
-        fill="none" stroke="#999" strokeWidth={stroke * 1.5} />
+        fill="none" stroke="#444" strokeWidth={stroke * 3} />
 
       {/* Total width label — top margin */}
       <text x={mLeft + stockWidth / 2} y={mTop * 0.45} textAnchor="middle" dominantBaseline="middle"
