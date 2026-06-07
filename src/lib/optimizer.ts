@@ -26,7 +26,7 @@ export interface OptimizeResult {
   errors: string[]
 }
 
-interface Rect {
+interface FreeSection {
   x: number
   y: number
   width: number
@@ -48,13 +48,13 @@ interface OpenSheet {
   usableW: number
   usableH: number
   trim: number
-  freeRects: Rect[]
+  freeSections: FreeSection[]
   placedParts: PlacedPart[]
 }
 
 interface Placement {
   sheetIdx: number
-  rectIdx: number
+  sectionIdx: number
   x: number
   y: number
   width: number
@@ -66,131 +66,16 @@ interface Placement {
 
 const EPS = 1e-9
 
-function isContained(a: Rect, b: Rect): boolean {
-  // a is fully contained within b
-  return (
-    a.x >= b.x - EPS &&
-    a.y >= b.y - EPS &&
-    a.x + a.width <= b.x + b.width + EPS &&
-    a.y + a.height <= b.y + b.height + EPS
-  )
-}
-
-function pruneFreeRects(freeRects: Rect[]): Rect[] {
-  const result: Rect[] = []
-  for (let i = 0; i < freeRects.length; i++) {
-    let contained = false
-    for (let j = 0; j < freeRects.length; j++) {
-      if (i === j) continue
-      if (isContained(freeRects[i], freeRects[j])) {
-        contained = true
-        break
-      }
-    }
-    if (!contained) result.push(freeRects[i])
-  }
-  return result
-}
-
-function splitFreeRect(freeRect: Rect, used: Rect): Rect[] {
-  // If `used` does not intersect `freeRect`, return [freeRect]
-  if (
-    used.x >= freeRect.x + freeRect.width - EPS ||
-    used.x + used.width <= freeRect.x + EPS ||
-    used.y >= freeRect.y + freeRect.height - EPS ||
-    used.y + used.height <= freeRect.y + EPS
-  ) {
-    return [freeRect]
-  }
-
-  const result: Rect[] = []
-
-  // Left
-  if (used.x > freeRect.x + EPS && used.x < freeRect.x + freeRect.width) {
-    result.push({
-      x: freeRect.x,
-      y: freeRect.y,
-      width: used.x - freeRect.x,
-      height: freeRect.height,
-    })
-  }
-  // Right
-  if (used.x + used.width < freeRect.x + freeRect.width - EPS) {
-    result.push({
-      x: used.x + used.width,
-      y: freeRect.y,
-      width: freeRect.x + freeRect.width - (used.x + used.width),
-      height: freeRect.height,
-    })
-  }
-  // Top
-  if (used.y > freeRect.y + EPS && used.y < freeRect.y + freeRect.height) {
-    result.push({
-      x: freeRect.x,
-      y: freeRect.y,
-      width: freeRect.width,
-      height: used.y - freeRect.y,
-    })
-  }
-  // Bottom
-  if (used.y + used.height < freeRect.y + freeRect.height - EPS) {
-    result.push({
-      x: freeRect.x,
-      y: used.y + used.height,
-      width: freeRect.width,
-      height: freeRect.y + freeRect.height - (used.y + used.height),
-    })
-  }
-
-  return result
-}
-
-function placePartOnSheet(
-  sheet: OpenSheet,
-  rectIdx: number,
-  x: number,
-  y: number,
-  pw: number,
-  ph: number,
-  rotated: boolean,
-  kerfWidth: number,
-  partId: string,
-  label: string
-) {
-  // Record placement
-  sheet.placedParts.push({
-    partId,
-    label,
-    x: x + sheet.trim,
-    y: y + sheet.trim,
-    width: pw,
-    height: ph,
-    rotated,
-  })
-
-  // Compute kerf extension — don't extend past usable area
-  const kerfX = x + pw + kerfWidth <= sheet.usableW + EPS ? kerfWidth : 0
-  const kerfY = y + ph + kerfWidth <= sheet.usableH + EPS ? kerfWidth : 0
-
-  const used: Rect = {
-    x,
-    y,
-    width: pw + kerfX,
-    height: ph + kerfY,
-  }
-
-  const newFreeRects: Rect[] = []
-  for (const fr of sheet.freeRects) {
-    const split = splitFreeRect(fr, used)
-    for (const s of split) {
-      if (s.width > EPS && s.height > EPS) newFreeRects.push(s)
-    }
-  }
-
-  // Remove rectIdx slot marker — splitFreeRect already replaces the used rect
-  sheet.freeRects = pruneFreeRects(newFreeRects)
-  // Suppress unused parameter warning — rectIdx is part of the placement contract
-  void rectIdx
+function partFitsOnStock(
+  partW: number,
+  partH: number,
+  usableW: number,
+  usableH: number,
+  allowRotation: boolean
+): boolean {
+  if (partW <= usableW + EPS && partH <= usableH + EPS) return true
+  if (allowRotation && partH <= usableW + EPS && partW <= usableH + EPS) return true
+  return false
 }
 
 function findBestPlacement(
@@ -202,26 +87,25 @@ function findBestPlacement(
 
   for (let sIdx = 0; sIdx < sheets.length; sIdx++) {
     const sheet = sheets[sIdx]
-    for (let rIdx = 0; rIdx < sheet.freeRects.length; rIdx++) {
-      const rect = sheet.freeRects[rIdx]
+    for (let rIdx = 0; rIdx < sheet.freeSections.length; rIdx++) {
+      const section = sheet.freeSections[rIdx]
 
       // Try non-rotated
-      if (part.width <= rect.width + EPS && part.height <= rect.height + EPS) {
-        const leftoverHoriz = rect.width - part.width
-        const leftoverVert = rect.height - part.height
-        const shortSide = Math.min(leftoverHoriz, leftoverVert)
-        const longSide = Math.max(leftoverHoriz, leftoverVert)
+      if (part.width <= section.width + EPS && part.height <= section.height + EPS) {
+        const leftoverW = section.width - part.width
+        const leftoverH = section.height - part.height
+        const shortSide = Math.min(leftoverW, leftoverH)
+        const longSide = Math.max(leftoverW, leftoverH)
         if (
           best === null ||
           shortSide < best.shortSideFit - EPS ||
-          (Math.abs(shortSide - best.shortSideFit) < EPS &&
-            longSide < best.longSideFit - EPS)
+          (Math.abs(shortSide - best.shortSideFit) < EPS && longSide < best.longSideFit - EPS)
         ) {
           best = {
             sheetIdx: sIdx,
-            rectIdx: rIdx,
-            x: rect.x,
-            y: rect.y,
+            sectionIdx: rIdx,
+            x: section.x,
+            y: section.y,
             width: part.width,
             height: part.height,
             rotated: false,
@@ -235,24 +119,23 @@ function findBestPlacement(
       if (
         allowRotation &&
         part.width !== part.height &&
-        part.height <= rect.width + EPS &&
-        part.width <= rect.height + EPS
+        part.height <= section.width + EPS &&
+        part.width <= section.height + EPS
       ) {
-        const leftoverHoriz = rect.width - part.height
-        const leftoverVert = rect.height - part.width
-        const shortSide = Math.min(leftoverHoriz, leftoverVert)
-        const longSide = Math.max(leftoverHoriz, leftoverVert)
+        const leftoverW = section.width - part.height
+        const leftoverH = section.height - part.width
+        const shortSide = Math.min(leftoverW, leftoverH)
+        const longSide = Math.max(leftoverW, leftoverH)
         if (
           best === null ||
           shortSide < best.shortSideFit - EPS ||
-          (Math.abs(shortSide - best.shortSideFit) < EPS &&
-            longSide < best.longSideFit - EPS)
+          (Math.abs(shortSide - best.shortSideFit) < EPS && longSide < best.longSideFit - EPS)
         ) {
           best = {
             sheetIdx: sIdx,
-            rectIdx: rIdx,
-            x: rect.x,
-            y: rect.y,
+            sectionIdx: rIdx,
+            x: section.x,
+            y: section.y,
             width: part.height,
             height: part.width,
             rotated: true,
@@ -267,16 +150,67 @@ function findBestPlacement(
   return best
 }
 
-function partFitsOnStock(
-  partW: number,
-  partH: number,
-  usableW: number,
-  usableH: number,
-  allowRotation: boolean
-): boolean {
-  if (partW <= usableW + EPS && partH <= usableH + EPS) return true
-  if (allowRotation && partH <= usableW + EPS && partW <= usableH + EPS) return true
-  return false
+// Guillotine split using the Shorter Leftover Axis (SLA) rule.
+//
+// After placing a part at the top-left of `section`, the remaining L-shaped
+// space is divided into exactly two rectangles by a single straight cut:
+//
+//   dw < dh  →  horizontal cut at y+ph+kerfY:
+//     right  = (x+pw+kerfX, y,          dw, ph)
+//     bottom = (section.x,  y+ph+kerfY, section.width, dh)
+//
+//   dw >= dh →  vertical cut at x+pw+kerfX:
+//     right  = (x+pw+kerfX, section.y, dw, section.height)
+//     below  = (x,          y+ph+kerfY, pw, dh)
+//
+// This matches how a table saw works: every cut runs edge-to-edge across the
+// current piece, so every resulting rectangle is independently accessible.
+function placePartOnSheet(
+  sheet: OpenSheet,
+  placement: Placement,
+  kerfWidth: number,
+  partId: string,
+  label: string
+) {
+  const { sectionIdx, x, y, width: pw, height: ph, rotated } = placement
+  const section = sheet.freeSections[sectionIdx]
+
+  sheet.placedParts.push({
+    partId,
+    label,
+    x: x + sheet.trim,
+    y: y + sheet.trim,
+    width: pw,
+    height: ph,
+    rotated,
+  })
+
+  // Don't extend kerf past the section edge
+  const kerfX = x + pw + kerfWidth <= section.x + section.width + EPS ? kerfWidth : 0
+  const kerfY = y + ph + kerfWidth <= section.y + section.height + EPS ? kerfWidth : 0
+
+  const dw = section.width - pw - kerfX
+  const dh = section.height - ph - kerfY
+
+  sheet.freeSections.splice(sectionIdx, 1)
+
+  if (dw < dh) {
+    // Horizontal guillotine cut
+    if (dw > EPS && ph > EPS) {
+      sheet.freeSections.push({ x: x + pw + kerfX, y: section.y, width: dw, height: ph })
+    }
+    if (section.width > EPS && dh > EPS) {
+      sheet.freeSections.push({ x: section.x, y: y + ph + kerfY, width: section.width, height: dh })
+    }
+  } else {
+    // Vertical guillotine cut
+    if (dw > EPS && section.height > EPS) {
+      sheet.freeSections.push({ x: x + pw + kerfX, y: section.y, width: dw, height: section.height })
+    }
+    if (pw > EPS && dh > EPS) {
+      sheet.freeSections.push({ x: section.x, y: y + ph + kerfY, width: pw, height: dh })
+    }
+  }
 }
 
 interface StockBudget {
@@ -291,7 +225,6 @@ function openNewSheet(
   allowRotation: boolean,
   sheetCounts: Map<string, number>
 ): OpenSheet | null {
-  // Prefer smallest stock that fits — minimizes waste. Ties broken by area ascending.
   const candidates: { idx: number; area: number }[] = []
   for (let i = 0; i < budgets.length; i++) {
     const b = budgets[i]
@@ -303,7 +236,6 @@ function openNewSheet(
   }
   if (candidates.length === 0) return null
 
-  // Pick smallest-area that fits (minimize waste). If tied, pick the one with fewest used.
   candidates.sort((a, b) => a.area - b.area)
   const pick = candidates[0]
   const b = budgets[pick.idx]
@@ -323,7 +255,7 @@ function openNewSheet(
     usableW,
     usableH,
     trim,
-    freeRects: [{ x: 0, y: 0, width: usableW, height: usableH }],
+    freeSections: [{ x: 0, y: 0, width: usableW, height: usableH }],
     placedParts: [],
   }
 }
@@ -346,7 +278,6 @@ function runGreedy(
   const openSheets: OpenSheet[] = []
   const sheetCounts = new Map<string, number>()
 
-  // Pre-check unfittable parts across ALL stocks
   const fittable: ExpandedPart[] = []
   const reportedUnfit = new Set<string>()
   for (const part of expandedParts) {
@@ -362,9 +293,7 @@ function runGreedy(
     if (!fitsAny) {
       const key = `${part.partId}-${part.width}x${part.height}`
       if (!reportedUnfit.has(key)) {
-        errors.push(
-          `Part '${part.label}' (${part.width}x${part.height}) is larger than all stock sheets`
-        )
+        errors.push(`Part '${part.label}' (${part.width}x${part.height}) is larger than all stock sheets`)
         reportedUnfit.add(key)
       }
     } else {
@@ -378,42 +307,25 @@ function runGreedy(
     let placement = findBestPlacement(openSheets, part, allowRotation)
 
     if (placement === null) {
-      // Try opening a new sheet
       const newSheet = openNewSheet(budgets, part, trimPerEdge, allowRotation, sheetCounts)
       if (newSheet === null) {
         unplacedCount++
-        errors.push(
-          `Part '${part.label}' (${part.width}x${part.height}) could not be placed — out of stock`
-        )
+        errors.push(`Part '${part.label}' (${part.width}x${part.height}) could not be placed — out of stock`)
         continue
       }
       openSheets.push(newSheet)
       placement = findBestPlacement(openSheets, part, allowRotation)
       if (placement === null) {
         unplacedCount++
-        errors.push(
-          `Part '${part.label}' (${part.width}x${part.height}) could not be placed on new sheet`
-        )
+        errors.push(`Part '${part.label}' (${part.width}x${part.height}) could not be placed on new sheet`)
         continue
       }
     }
 
     const sheet = openSheets[placement.sheetIdx]
-    placePartOnSheet(
-      sheet,
-      placement.rectIdx,
-      placement.x,
-      placement.y,
-      placement.width,
-      placement.height,
-      placement.rotated,
-      kerfWidth,
-      part.partId,
-      part.label
-    )
+    placePartOnSheet(sheet, placement, kerfWidth, part.partId, part.label)
   }
 
-  // Build SheetResult list
   const sheetResults: SheetResult[] = openSheets.map((s) => {
     const usableArea = s.usableW * s.usableH
     const usedArea = s.placedParts.reduce((sum, p) => sum + p.width * p.height, 0)
@@ -437,31 +349,22 @@ function runGreedy(
   const overallWastePercent =
     totalUsableArea > 0 ? ((totalUsableArea - totalUsedArea) / totalUsableArea) * 100 : 0
 
-  return {
-    sheets: sheetResults,
-    overallWastePercent,
-    errors,
-    unplacedCount,
-  }
+  return { sheets: sheetResults, overallWastePercent, errors, unplacedCount }
 }
 
 function sortParts(parts: ExpandedPart[], strategy: number): ExpandedPart[] {
   const copy = parts.slice()
   switch (strategy) {
     case 0:
-      // Area descending
       copy.sort((a, b) => b.width * b.height - a.width * a.height)
       break
     case 1:
-      // Area ascending
       copy.sort((a, b) => a.width * a.height - b.width * b.height)
       break
     case 2:
-      // Perimeter descending
       copy.sort((a, b) => 2 * (b.width + b.height) - 2 * (a.width + a.height))
       break
     case 3:
-      // Width descending
       copy.sort((a, b) => b.width - a.width)
       break
   }
@@ -473,39 +376,22 @@ export function optimize(
   parts: Part[],
   params: CuttingParams
 ): OptimizeResult {
-  // Expand parts
   const expanded: ExpandedPart[] = []
   for (const p of parts) {
     for (let i = 0; i < p.quantity; i++) {
-      expanded.push({
-        partId: p.id,
-        label: p.label,
-        width: p.width,
-        height: p.height,
-      })
+      expanded.push({ partId: p.id, label: p.label, width: p.width, height: p.height })
     }
   }
 
   if (expanded.length === 0) {
-    return {
-      sheets: [],
-      totalSheets: 0,
-      overallWastePercent: 0,
-      errors: [],
-    }
+    return { sheets: [], totalSheets: 0, overallWastePercent: 0, errors: [] }
   }
 
   if (stocks.length === 0) {
-    return {
-      sheets: [],
-      totalSheets: 0,
-      overallWastePercent: 0,
-      errors: ['No stock sheets defined'],
-    }
+    return { sheets: [], totalSheets: 0, overallWastePercent: 0, errors: ['No stock sheets defined'] }
   }
 
-  const strategies =
-    params.optimizationGoal === 'minimize-waste' ? [0, 1, 2, 3] : [0]
+  const strategies = params.optimizationGoal === 'minimize-waste' ? [0, 1, 2, 3] : [0]
 
   let best: RunResult | null = null
 
@@ -518,7 +404,6 @@ export function optimize(
       continue
     }
 
-    // Prefer fewer unplaced parts, then lower waste, then fewer sheets
     if (result.unplacedCount < best.unplacedCount) {
       best = result
     } else if (result.unplacedCount === best.unplacedCount) {
@@ -537,7 +422,6 @@ export function optimize(
   }
 
   const finalResult = best!
-
   return {
     sheets: finalResult.sheets,
     totalSheets: finalResult.sheets.length,
