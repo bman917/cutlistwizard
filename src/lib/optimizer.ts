@@ -52,6 +52,8 @@ interface OpenSheet {
   placedParts: PlacedPart[]
 }
 
+type FitRule = 'bssf' | 'baf' | 'blsf'
+
 interface Placement {
   sheetIdx: number
   sectionIdx: number
@@ -60,11 +62,27 @@ interface Placement {
   width: number
   height: number
   rotated: boolean
-  shortSideFit: number
-  longSideFit: number
+  primaryFit: number
+  secondaryFit: number
 }
 
 const EPS = 1e-9
+
+function scoreFit(
+  rule: FitRule,
+  leftoverW: number,
+  leftoverH: number,
+  sectionArea: number,
+  partArea: number
+): { primary: number; secondary: number } {
+  const shortSide = Math.min(leftoverW, leftoverH)
+  const longSide = Math.max(leftoverW, leftoverH)
+  switch (rule) {
+    case 'bssf': return { primary: shortSide, secondary: longSide }
+    case 'blsf': return { primary: longSide, secondary: shortSide }
+    case 'baf':  return { primary: sectionArea - partArea, secondary: shortSide }
+  }
+}
 
 function partFitsOnStock(
   partW: number,
@@ -81,68 +99,59 @@ function partFitsOnStock(
 function findBestPlacement(
   sheets: OpenSheet[],
   part: ExpandedPart,
-  allowRotation: boolean
+  allowRotation: boolean,
+  rule: FitRule
 ): Placement | null {
   let best: Placement | null = null
+
+  function consider(
+    sIdx: number,
+    rIdx: number,
+    section: FreeSection,
+    placedW: number,
+    placedH: number,
+    rotated: boolean
+  ) {
+    const leftoverW = section.width - placedW
+    const leftoverH = section.height - placedH
+    const sectionArea = section.width * section.height
+    const partArea = placedW * placedH
+    const { primary, secondary } = scoreFit(rule, leftoverW, leftoverH, sectionArea, partArea)
+    if (
+      best === null ||
+      primary < best.primaryFit - EPS ||
+      (Math.abs(primary - best.primaryFit) < EPS && secondary < best.secondaryFit - EPS)
+    ) {
+      best = {
+        sheetIdx: sIdx,
+        sectionIdx: rIdx,
+        x: section.x,
+        y: section.y,
+        width: placedW,
+        height: placedH,
+        rotated,
+        primaryFit: primary,
+        secondaryFit: secondary,
+      }
+    }
+  }
 
   for (let sIdx = 0; sIdx < sheets.length; sIdx++) {
     const sheet = sheets[sIdx]
     for (let rIdx = 0; rIdx < sheet.freeSections.length; rIdx++) {
       const section = sheet.freeSections[rIdx]
 
-      // Try non-rotated
       if (part.width <= section.width + EPS && part.height <= section.height + EPS) {
-        const leftoverW = section.width - part.width
-        const leftoverH = section.height - part.height
-        const shortSide = Math.min(leftoverW, leftoverH)
-        const longSide = Math.max(leftoverW, leftoverH)
-        if (
-          best === null ||
-          shortSide < best.shortSideFit - EPS ||
-          (Math.abs(shortSide - best.shortSideFit) < EPS && longSide < best.longSideFit - EPS)
-        ) {
-          best = {
-            sheetIdx: sIdx,
-            sectionIdx: rIdx,
-            x: section.x,
-            y: section.y,
-            width: part.width,
-            height: part.height,
-            rotated: false,
-            shortSideFit: shortSide,
-            longSideFit: longSide,
-          }
-        }
+        consider(sIdx, rIdx, section, part.width, part.height, false)
       }
 
-      // Try rotated
       if (
         allowRotation &&
         part.width !== part.height &&
         part.height <= section.width + EPS &&
         part.width <= section.height + EPS
       ) {
-        const leftoverW = section.width - part.height
-        const leftoverH = section.height - part.width
-        const shortSide = Math.min(leftoverW, leftoverH)
-        const longSide = Math.max(leftoverW, leftoverH)
-        if (
-          best === null ||
-          shortSide < best.shortSideFit - EPS ||
-          (Math.abs(shortSide - best.shortSideFit) < EPS && longSide < best.longSideFit - EPS)
-        ) {
-          best = {
-            sheetIdx: sIdx,
-            sectionIdx: rIdx,
-            x: section.x,
-            y: section.y,
-            width: part.height,
-            height: part.width,
-            rotated: true,
-            shortSideFit: shortSide,
-            longSideFit: longSide,
-          }
-        }
+        consider(sIdx, rIdx, section, part.height, part.width, true)
       }
     }
   }
@@ -211,6 +220,69 @@ function placePartOnSheet(
       sheet.freeSections.push({ x: section.x, y: y + ph + kerfY, width: pw, height: dh })
     }
   }
+
+  mergeFreeSections(sheet.freeSections)
+}
+
+function mergeFreeSections(sections: FreeSection[]): void {
+  let merged = true
+  while (merged) {
+    merged = false
+    outer: for (let i = 0; i < sections.length; i++) {
+      for (let j = i + 1; j < sections.length; j++) {
+        const a = sections[i]
+        const b = sections[j]
+        // Vertical stack: same x/width, a directly above b
+        if (
+          Math.abs(a.x - b.x) < EPS &&
+          Math.abs(a.width - b.width) < EPS &&
+          Math.abs(a.y + a.height - b.y) < EPS
+        ) {
+          sections.splice(j, 1)
+          sections.splice(i, 1)
+          sections.push({ x: a.x, y: a.y, width: a.width, height: a.height + b.height })
+          merged = true
+          break outer
+        }
+        // Vertical stack: b directly above a
+        if (
+          Math.abs(a.x - b.x) < EPS &&
+          Math.abs(a.width - b.width) < EPS &&
+          Math.abs(b.y + b.height - a.y) < EPS
+        ) {
+          sections.splice(j, 1)
+          sections.splice(i, 1)
+          sections.push({ x: a.x, y: b.y, width: a.width, height: a.height + b.height })
+          merged = true
+          break outer
+        }
+        // Horizontal join: same y/height, a directly left of b
+        if (
+          Math.abs(a.y - b.y) < EPS &&
+          Math.abs(a.height - b.height) < EPS &&
+          Math.abs(a.x + a.width - b.x) < EPS
+        ) {
+          sections.splice(j, 1)
+          sections.splice(i, 1)
+          sections.push({ x: a.x, y: a.y, width: a.width + b.width, height: a.height })
+          merged = true
+          break outer
+        }
+        // Horizontal join: b directly left of a
+        if (
+          Math.abs(a.y - b.y) < EPS &&
+          Math.abs(a.height - b.height) < EPS &&
+          Math.abs(b.x + b.width - a.x) < EPS
+        ) {
+          sections.splice(j, 1)
+          sections.splice(i, 1)
+          sections.push({ x: b.x, y: a.y, width: a.width + b.width, height: a.height })
+          merged = true
+          break outer
+        }
+      }
+    }
+  }
 }
 
 interface StockBudget {
@@ -270,7 +342,8 @@ interface RunResult {
 function runGreedy(
   stocks: Stock[],
   expandedParts: ExpandedPart[],
-  params: CuttingParams
+  params: CuttingParams,
+  rule: FitRule
 ): RunResult {
   const { kerfWidth, trimPerEdge, allowRotation } = params
   const errors: string[] = []
@@ -304,7 +377,7 @@ function runGreedy(
   let unplacedCount = 0
 
   for (const part of fittable) {
-    let placement = findBestPlacement(openSheets, part, allowRotation)
+    let placement = findBestPlacement(openSheets, part, allowRotation, rule)
 
     if (placement === null) {
       const newSheet = openNewSheet(budgets, part, trimPerEdge, allowRotation, sheetCounts)
@@ -314,7 +387,7 @@ function runGreedy(
         continue
       }
       openSheets.push(newSheet)
-      placement = findBestPlacement(openSheets, part, allowRotation)
+      placement = findBestPlacement(openSheets, part, allowRotation, rule)
       if (placement === null) {
         unplacedCount++
         errors.push(`Part '${part.label}' (${part.width}x${part.height}) could not be placed on new sheet`)
@@ -391,32 +464,35 @@ export function optimize(
     return { sheets: [], totalSheets: 0, overallWastePercent: 0, errors: ['No stock sheets defined'] }
   }
 
-  const strategies = params.optimizationGoal === 'minimize-waste' ? [0, 1, 2, 3] : [0]
+  const sortStrategies = [0, 1, 2, 3]
+  const fitRules: FitRule[] = ['bssf', 'baf', 'blsf']
 
   let best: RunResult | null = null
 
-  for (const strat of strategies) {
+  for (const strat of sortStrategies) {
     const sorted = sortParts(expanded, strat)
-    const result = runGreedy(stocks, sorted, params)
+    for (const rule of fitRules) {
+      const result = runGreedy(stocks, sorted, params, rule)
 
-    if (best === null) {
-      best = result
-      continue
-    }
+      if (best === null) {
+        best = result
+        continue
+      }
 
-    if (result.unplacedCount < best.unplacedCount) {
-      best = result
-    } else if (result.unplacedCount === best.unplacedCount) {
-      if (
-        params.optimizationGoal === 'minimize-waste' &&
-        result.overallWastePercent < best.overallWastePercent
-      ) {
+      if (result.unplacedCount < best.unplacedCount) {
         best = result
-      } else if (
-        params.optimizationGoal === 'minimize-sheets' &&
-        result.sheets.length < best.sheets.length
-      ) {
-        best = result
+      } else if (result.unplacedCount === best.unplacedCount) {
+        if (
+          params.optimizationGoal === 'minimize-waste' &&
+          result.overallWastePercent < best.overallWastePercent
+        ) {
+          best = result
+        } else if (
+          params.optimizationGoal === 'minimize-sheets' &&
+          result.sheets.length < best.sheets.length
+        ) {
+          best = result
+        }
       }
     }
   }

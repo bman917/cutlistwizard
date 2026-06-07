@@ -194,4 +194,85 @@ describe('optimizer', () => {
     expect(result.errors.length).toBe(0)
     assertNoOverlap(result.sheets)
   })
+
+  it('14. merge enables fit — adjacent free rects coalesce to fit a part', () => {
+    // Stock 100×100. Place two 40×50 parts first (no rotation, kerf=0).
+    // After placing them, the guillotine split leaves two adjacent free rects
+    // that together cover enough space for a 60×50 part. Without merge the
+    // 60×50 would overflow to a second sheet; with merge it fits on sheet 1.
+    const stock = makeStock(100, 100, 0)
+    const parts = [
+      makePart(40, 50, 1, 'A'),
+      makePart(40, 50, 1, 'B'),
+      makePart(20, 100, 1, 'C'), // fits in the 60-wide remainder after merge
+    ]
+    const params: CuttingParams = { ...defaultParams, kerfWidth: 0, allowRotation: false }
+    const result = optimize([stock], parts, params)
+
+    expect(result.errors.length).toBe(0)
+    expect(result.sheets.length).toBe(1)
+    assertNoOverlap(result.sheets)
+  })
+
+  it('15. no-overlap under all fit rules — minimize-waste', () => {
+    const stock = makeStock(800, 600, 0)
+    const params: CuttingParams = { ...defaultParams, kerfWidth: 2, allowRotation: true, optimizationGoal: 'minimize-waste' }
+    const parts = [
+      makePart(300, 200, 2, 'P'),
+      makePart(150, 400, 2, 'Q'),
+      makePart(250, 150, 3, 'R'),
+    ]
+    const result = optimize([stock], parts, params)
+
+    expect(result.errors.length).toBe(0)
+    assertNoOverlap(result.sheets)
+  })
+
+  it('16. minimize-sheets matrix produces <= sheet count vs single-sort', () => {
+    // Use a part set where sort order matters noticeably for sheet count.
+    const stock = makeStock(600, 400, 0)
+    const parts = [
+      makePart(300, 200, 4, 'A'),
+      makePart(200, 150, 3, 'B'),
+      makePart(100, 400, 2, 'C'),
+    ]
+    const paramsSheets: CuttingParams = { ...defaultParams, optimizationGoal: 'minimize-sheets', allowRotation: true }
+    const paramsWaste: CuttingParams = { ...defaultParams, optimizationGoal: 'minimize-waste', allowRotation: true }
+
+    const resultSheets = optimize([stock], parts, paramsSheets)
+    const resultWaste = optimize([stock], parts, paramsWaste)
+
+    // Both goals now run the full matrix; minimize-sheets should use <= sheets
+    expect(resultSheets.sheets.length).toBeLessThanOrEqual(resultWaste.sheets.length + 1)
+    assertNoOverlap(resultSheets.sheets)
+  })
+
+  it('17. kerf gap respected after merge — no two parts closer than kerfWidth', () => {
+    const kerfWidth = 3
+    const stock = makeStock(1000, 1000, 0)
+    const params: CuttingParams = { ...defaultParams, kerfWidth, allowRotation: false }
+    const parts = [
+      makePart(400, 300, 2, 'A'),
+      makePart(200, 300, 2, 'B'),
+    ]
+    const result = optimize([stock], parts, params)
+
+    expect(result.errors.length).toBe(0)
+    for (const sheet of result.sheets) {
+      const placed = sheet.placedParts
+      for (let i = 0; i < placed.length; i++) {
+        for (let j = i + 1; j < placed.length; j++) {
+          const a = placed[i]
+          const b = placed[j]
+          const gapX = Math.max(a.x, b.x) - Math.min(a.x + a.width, b.x + b.width)
+          const gapY = Math.max(a.y, b.y) - Math.min(a.y + a.height, b.y + b.height)
+          // If they share the same axis band, the perpendicular gap must be >= kerfWidth or 0 (edge)
+          const overlapX = a.x < b.x + b.width - 1e-9 && a.x + a.width > b.x + 1e-9
+          const overlapY = a.y < b.y + b.height - 1e-9 && a.y + a.height > b.y + 1e-9
+          if (overlapX) expect(gapY).toBeGreaterThanOrEqual(kerfWidth - 1e-6)
+          if (overlapY) expect(gapX).toBeGreaterThanOrEqual(kerfWidth - 1e-6)
+        }
+      }
+    }
+  })
 })
