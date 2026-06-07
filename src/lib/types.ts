@@ -18,6 +18,7 @@ export interface CuttingParams {
   trimPerEdge: number     // default 0
   optimizationGoal: 'minimize-sheets' | 'minimize-waste'
   allowRotation: boolean  // default true
+  groupParts?: boolean    // keep identical parts on as few sheets as possible (never adds sheets)
 }
 
 export interface Session {

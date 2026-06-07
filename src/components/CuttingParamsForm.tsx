@@ -157,6 +157,28 @@ export default function CuttingParamsForm({ params, onChange, unit }: CuttingPar
         />
         Allow rotation
       </label>
+
+      {/* Keep identical parts together */}
+      <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.8125rem', fontFamily: 'var(--font-sans)', color: 'var(--color-text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+        <input
+          type="checkbox"
+          checked={params.groupParts ?? false}
+          onChange={e => update('groupParts', e.target.checked)}
+          style={{
+            width: '14px',
+            height: '14px',
+            marginTop: '2px',
+            accentColor: 'var(--color-amber)',
+            cursor: 'pointer',
+          }}
+        />
+        <span>
+          Keep identical parts together
+          <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+            Clusters same-size parts onto fewer sheets. Never adds sheets.
+          </span>
+        </span>
+      </label>
     </div>
   )
 }

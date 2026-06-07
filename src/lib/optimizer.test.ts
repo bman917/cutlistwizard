@@ -275,4 +275,56 @@ describe('optimizer', () => {
       }
     }
   })
+
+  // Sum over labels of the number of distinct sheets each label appears on.
+  // Lower means identical parts are more tightly clustered.
+  function scatter(sheets: SheetResult[]): number {
+    const byLabel = new Map<string, Set<number>>()
+    for (const sheet of sheets) {
+      for (const p of sheet.placedParts) {
+        let set = byLabel.get(p.label)
+        if (!set) { set = new Set(); byLabel.set(p.label, set) }
+        set.add(sheet.sheetIndex)
+      }
+    }
+    let total = 0
+    for (const set of byLabel.values()) total += set.size
+    return total
+  }
+
+  it('grouping reduces scatter without adding sheets', () => {
+    const stock = makeStock(96, 48, 0)
+    const params: CuttingParams = { kerfWidth: 0.063, trimPerEdge: 0, optimizationGoal: 'minimize-sheets', allowRotation: true }
+    const parts: Part[] = [
+      makePart(47, 16, 6, 'TopBot'),
+      makePart(17, 16, 2, 'LowerSides'),
+      makePart(51.1102, 16, 3, 'MidSides'),
+      makePart(22.437, 16, 3, 'MidShelves'),
+      makePart(11.9685, 16, 3, 'TopSides'),
+    ]
+
+    const off = optimize([stock], parts, { ...params, groupParts: false })
+    const on = optimize([stock], parts, { ...params, groupParts: true })
+
+    // Grouping must never cost extra sheets.
+    expect(on.totalSheets).toBe(off.totalSheets)
+    // And it should cluster identical parts at least as tightly.
+    expect(scatter(on.sheets)).toBeLessThanOrEqual(scatter(off.sheets))
+    assertNoOverlap(on.sheets)
+  })
+
+  it('grouping keeps identical parts on a single sheet when capacity allows', () => {
+    // Two part families, each pair exactly filling one sheet. Grouping should put
+    // each family on its own sheet rather than mixing them.
+    const stock = makeStock(4, 2, 0)
+    const params: CuttingParams = { kerfWidth: 0, trimPerEdge: 0, optimizationGoal: 'minimize-sheets', allowRotation: false }
+    const parts: Part[] = [
+      makePart(2, 2, 2, 'A'),
+      makePart(2, 2, 2, 'B'),
+    ]
+    const on = optimize([stock], parts, { ...params, groupParts: true })
+    expect(on.totalSheets).toBe(2)
+    // Each label confined to exactly one sheet → scatter equals the label count.
+    expect(scatter(on.sheets)).toBe(2)
+  })
 })

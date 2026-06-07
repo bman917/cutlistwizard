@@ -64,6 +64,7 @@ interface Placement {
   rotated: boolean
   primaryFit: number
   secondaryFit: number
+  sameLabel: boolean
 }
 
 const EPS = 1e-9
@@ -100,9 +101,17 @@ function findBestPlacement(
   sheets: OpenSheet[],
   part: ExpandedPart,
   allowRotation: boolean,
-  rule: FitRule
+  rule: FitRule,
+  groupBias: boolean
 ): Placement | null {
   let best: Placement | null = null
+
+  // When grouping is on, prefer sheets that already hold this label so identical
+  // parts cluster onto as few sheets as possible. This only changes which fitting
+  // placement is chosen; it never opens a sheet a part wouldn't otherwise need.
+  const sheetHasLabel = sheets.map((s) =>
+    groupBias ? s.placedParts.some((p) => p.label === part.label) : false
+  )
 
   function consider(
     sIdx: number,
@@ -117,11 +126,22 @@ function findBestPlacement(
     const sectionArea = section.width * section.height
     const partArea = placedW * placedH
     const { primary, secondary } = scoreFit(rule, leftoverW, leftoverH, sectionArea, partArea)
-    if (
-      best === null ||
-      primary < best.primaryFit - EPS ||
-      (Math.abs(primary - best.primaryFit) < EPS && secondary < best.secondaryFit - EPS)
-    ) {
+    const sameLabel = sheetHasLabel[sIdx]
+
+    let isBetter: boolean
+    if (best === null) {
+      isBetter = true
+    } else if (groupBias && sameLabel !== best.sameLabel) {
+      // Grouping outranks fit, but only as a tie-break between fitting spots —
+      // a same-label sheet beats a different-label one.
+      isBetter = sameLabel
+    } else {
+      isBetter =
+        primary < best.primaryFit - EPS ||
+        (Math.abs(primary - best.primaryFit) < EPS && secondary < best.secondaryFit - EPS)
+    }
+
+    if (isBetter) {
       best = {
         sheetIdx: sIdx,
         sectionIdx: rIdx,
@@ -132,6 +152,7 @@ function findBestPlacement(
         rotated,
         primaryFit: primary,
         secondaryFit: secondary,
+        sameLabel,
       }
     }
   }
@@ -337,13 +358,15 @@ interface RunResult {
   overallWastePercent: number
   errors: string[]
   unplacedCount: number
+  groupingScore: number // sum over labels of distinct sheets they appear on; lower = more grouped
 }
 
 function runGreedy(
   stocks: Stock[],
   expandedParts: ExpandedPart[],
   params: CuttingParams,
-  rule: FitRule
+  rule: FitRule,
+  groupBias: boolean
 ): RunResult {
   const { kerfWidth, trimPerEdge, allowRotation } = params
   const errors: string[] = []
@@ -377,7 +400,7 @@ function runGreedy(
   let unplacedCount = 0
 
   for (const part of fittable) {
-    let placement = findBestPlacement(openSheets, part, allowRotation, rule)
+    let placement = findBestPlacement(openSheets, part, allowRotation, rule, groupBias)
 
     if (placement === null) {
       const newSheet = openNewSheet(budgets, part, trimPerEdge, allowRotation, sheetCounts)
@@ -387,7 +410,7 @@ function runGreedy(
         continue
       }
       openSheets.push(newSheet)
-      placement = findBestPlacement(openSheets, part, allowRotation, rule)
+      placement = findBestPlacement(openSheets, part, allowRotation, rule, groupBias)
       if (placement === null) {
         unplacedCount++
         errors.push(`Part '${part.label}' (${part.width}x${part.height}) could not be placed on new sheet`)
@@ -422,7 +445,21 @@ function runGreedy(
   const overallWastePercent =
     totalUsableArea > 0 ? ((totalUsableArea - totalUsedArea) / totalUsableArea) * 100 : 0
 
-  return { sheets: sheetResults, overallWastePercent, errors, unplacedCount }
+  // For each label, count how many distinct sheets it lands on, then sum.
+  // A perfectly grouped layout scores one per label; scattering raises it.
+  const labelSheets = new Map<string, Set<string>>()
+  for (const s of openSheets) {
+    const sheetKey = `${s.stockId}#${s.sheetIndex}`
+    for (const p of s.placedParts) {
+      let set = labelSheets.get(p.label)
+      if (!set) { set = new Set(); labelSheets.set(p.label, set) }
+      set.add(sheetKey)
+    }
+  }
+  let groupingScore = 0
+  for (const set of labelSheets.values()) groupingScore += set.size
+
+  return { sheets: sheetResults, overallWastePercent, errors, unplacedCount, groupingScore }
 }
 
 function sortParts(parts: ExpandedPart[], strategy: number): ExpandedPart[] {
@@ -440,8 +477,59 @@ function sortParts(parts: ExpandedPart[], strategy: number): ExpandedPart[] {
     case 3:
       copy.sort((a, b) => b.width - a.width)
       break
+    case 4: {
+      // Grouping-aware: lay down the largest part-family (by total area) first so
+      // a high-quantity type can claim whole sheets instead of filling leftovers.
+      // Families stay contiguous so identical parts are placed back-to-back.
+      const groupArea = new Map<string, number>()
+      const groupOrder = new Map<string, number>()
+      copy.forEach((p, i) => {
+        groupArea.set(p.partId, (groupArea.get(p.partId) ?? 0) + p.width * p.height)
+        if (!groupOrder.has(p.partId)) groupOrder.set(p.partId, i)
+      })
+      copy.sort((a, b) => {
+        const diff = groupArea.get(b.partId)! - groupArea.get(a.partId)!
+        if (diff !== 0) return diff
+        return groupOrder.get(a.partId)! - groupOrder.get(b.partId)!
+      })
+      break
+    }
   }
   return copy
+}
+
+// Ranks one run against the current best. Priority order:
+//   1. fewer unplaced parts
+//   2. the primary objective (sheets, or waste)
+//   3. tighter grouping (only when enabled)
+//   4. the remaining objective as a final tie-break
+// Grouping sits below the primary objective, so it can never increase sheet count.
+function isBetterResult(
+  result: RunResult,
+  best: RunResult,
+  goal: CuttingParams['optimizationGoal'],
+  groupParts: boolean
+): boolean {
+  if (result.unplacedCount !== best.unplacedCount) {
+    return result.unplacedCount < best.unplacedCount
+  }
+  if (goal === 'minimize-sheets') {
+    if (result.sheets.length !== best.sheets.length) {
+      return result.sheets.length < best.sheets.length
+    }
+    if (groupParts && result.groupingScore !== best.groupingScore) {
+      return result.groupingScore < best.groupingScore
+    }
+    return result.overallWastePercent < best.overallWastePercent - EPS
+  } else {
+    if (Math.abs(result.overallWastePercent - best.overallWastePercent) > EPS) {
+      return result.overallWastePercent < best.overallWastePercent
+    }
+    if (groupParts && result.groupingScore !== best.groupingScore) {
+      return result.groupingScore < best.groupingScore
+    }
+    return result.sheets.length < best.sheets.length
+  }
 }
 
 export function optimize(
@@ -464,35 +552,29 @@ export function optimize(
     return { sheets: [], totalSheets: 0, overallWastePercent: 0, errors: ['No stock sheets defined'] }
   }
 
-  const sortStrategies = [0, 1, 2, 3]
   const fitRules: FitRule[] = ['bssf', 'baf', 'blsf']
+  // Grouping never overrides the primary objective; it only breaks ties between
+  // layouts that use the same number of sheets (or have equal waste). When it's
+  // on we run extra candidates — the same-label placement bias plus a
+  // family-first sort (strategy 4) — to surface tightly-clustered layouts.
+  const groupParts = params.groupParts === true
+
+  // [sortStrategy, groupBias] combinations to try.
+  const runs: [number, boolean][] = [
+    [0, false], [1, false], [2, false], [3, false],
+  ]
+  if (groupParts) {
+    for (const strat of [0, 1, 2, 3, 4]) runs.push([strat, true])
+  }
 
   let best: RunResult | null = null
 
-  for (const strat of sortStrategies) {
+  for (const [strat, groupBias] of runs) {
     const sorted = sortParts(expanded, strat)
     for (const rule of fitRules) {
-      const result = runGreedy(stocks, sorted, params, rule)
-
-      if (best === null) {
+      const result = runGreedy(stocks, sorted, params, rule, groupBias)
+      if (best === null || isBetterResult(result, best, params.optimizationGoal, groupParts)) {
         best = result
-        continue
-      }
-
-      if (result.unplacedCount < best.unplacedCount) {
-        best = result
-      } else if (result.unplacedCount === best.unplacedCount) {
-        if (
-          params.optimizationGoal === 'minimize-waste' &&
-          result.overallWastePercent < best.overallWastePercent
-        ) {
-          best = result
-        } else if (
-          params.optimizationGoal === 'minimize-sheets' &&
-          result.sheets.length < best.sheets.length
-        ) {
-          best = result
-        }
       }
     }
   }

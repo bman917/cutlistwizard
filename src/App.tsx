@@ -19,6 +19,7 @@ const DEFAULT_CUTTING_PARAMS = {
   trimPerEdge: 0,
   optimizationGoal: 'minimize-sheets' as const,
   allowRotation: true,
+  groupParts: false,
 }
 
 function createDefaultSession(): Session {
