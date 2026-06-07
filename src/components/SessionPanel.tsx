@@ -11,7 +11,7 @@ const DEFAULT_CUTTING_PARAMS = {
   trimPerEdge: 0,
   optimizationGoal: 'minimize-sheets' as const,
   allowRotation: true,
-  groupParts: false,
+  groupParts: true,
 }
 
 function formatDate(iso: string): string {
