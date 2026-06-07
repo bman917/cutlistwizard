@@ -54,6 +54,26 @@ function SheetDiagram({ sheet, colorMap, unit }: { sheet: SheetResult; colorMap:
       {/* Sheet waste background */}
       <rect x={mLeft} y={mTop} width={stockWidth} height={stockHeight} fill="#e8e6e1" />
 
+      {/* Waste offcut dimensions — only labelled where text fits */}
+      {sheet.wasteRects.map((w, i) => {
+        const wx = mLeft + w.x
+        const wy = mTop + w.y
+        const cx = wx + w.width / 2
+        const cy = wy + w.height / 2
+        const fits = w.width >= fs * 7 && w.height >= fs * 2.2
+        if (!fits) return null
+        return (
+          <g key={`waste-${i}`}>
+            <rect x={wx} y={wy} width={w.width} height={w.height}
+              fill="none" stroke="#a8a39a" strokeWidth={stroke} strokeDasharray={`${fs * 0.4} ${fs * 0.3}`} />
+            <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+              fill="#8a857c" fontSize={fs * 0.7} fontFamily="'DM Mono', monospace">
+              {fmt(w.width)} × {fmt(w.height)}{unit}
+            </text>
+          </g>
+        )
+      })}
+
       {/* Placed parts */}
       {placedParts.map((p, i) => {
         const key = p.label || p.partId

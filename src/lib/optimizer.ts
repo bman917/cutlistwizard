@@ -10,12 +10,20 @@ export interface PlacedPart {
   rotated: boolean
 }
 
+export interface WasteRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 export interface SheetResult {
   stockId: string
   sheetIndex: number
   stockWidth: number
   stockHeight: number
   placedParts: PlacedPart[]
+  wasteRects: WasteRect[] // leftover offcut rectangles, in sheet coordinates
   wastePercent: number
 }
 
@@ -432,6 +440,12 @@ function runGreedy(
       stockWidth: s.stockWidth,
       stockHeight: s.stockHeight,
       placedParts: s.placedParts,
+      wasteRects: s.freeSections.map((f) => ({
+        x: f.x + s.trim,
+        y: f.y + s.trim,
+        width: f.width,
+        height: f.height,
+      })),
       wastePercent,
     }
   })
