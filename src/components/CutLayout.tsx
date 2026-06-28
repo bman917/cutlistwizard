@@ -140,7 +140,7 @@ export default function CutLayout({ result, unit }: CutLayoutProps) {
   const [showAll, setShowAll] = useState(true)
 
   // Empty state
-  if (!result || (result.sheets.length === 0 && result.errors.length === 0)) {
+  if (!result || (result.sheets.length === 0 && result.errors.length === 0 && result.priorityWarnings.length === 0)) {
     return (
       <div
         style={{
@@ -160,25 +160,44 @@ export default function CutLayout({ result, unit }: CutLayoutProps) {
     )
   }
 
-  // Error-only state
-  if (result.sheets.length === 0 && result.errors.length > 0) {
+  // Error-only state (no sheets placed at all)
+  if (result.sheets.length === 0) {
     return (
-      <div style={{ padding: '16px' }}>
-        <div style={{
-          borderRadius: '5px',
-          backgroundColor: 'rgba(192, 57, 43, 0.12)',
-          border: '1px solid rgba(192, 57, 43, 0.4)',
-          padding: '14px 16px',
-        }}>
-          <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e07070', fontFamily: 'var(--font-sans)', marginBottom: '8px' }}>
-            Optimization failed
-          </p>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {result.errors.map((e, i) => (
-              <li key={i} style={{ fontSize: '0.8rem', color: '#c07070', fontFamily: 'var(--font-sans)' }}>{e}</li>
-            ))}
-          </ul>
-        </div>
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {result.priorityWarnings.length > 0 && (
+          <div style={{
+            borderRadius: '5px',
+            backgroundColor: 'rgba(215, 160, 0, 0.1)',
+            border: '1px solid rgba(215, 160, 0, 0.35)',
+            padding: '14px 16px',
+          }}>
+            <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-amber)', fontFamily: 'var(--font-sans)', marginBottom: '8px' }}>
+              Priority parts could not be placed
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {result.priorityWarnings.map((w, i) => (
+                <li key={i} style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-sans)' }}>{w}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {result.errors.length > 0 && (
+          <div style={{
+            borderRadius: '5px',
+            backgroundColor: 'rgba(192, 57, 43, 0.12)',
+            border: '1px solid rgba(192, 57, 43, 0.4)',
+            padding: '14px 16px',
+          }}>
+            <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e07070', fontFamily: 'var(--font-sans)', marginBottom: '8px' }}>
+              Optimization failed
+            </p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {result.errors.map((e, i) => (
+                <li key={i} style={{ fontSize: '0.8rem', color: '#c07070', fontFamily: 'var(--font-sans)' }}>{e}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     )
   }
@@ -213,6 +232,25 @@ export default function CutLayout({ result, unit }: CutLayoutProps) {
           {result.overallWastePercent.toFixed(1)}% waste
         </span>
       </div>
+
+      {/* Priority parts warning */}
+      {result.priorityWarnings.length > 0 && (
+        <div style={{
+          borderRadius: '5px',
+          backgroundColor: 'rgba(215, 160, 0, 0.1)',
+          border: '1px solid rgba(215, 160, 0, 0.35)',
+          padding: '10px 14px',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-amber)', fontFamily: 'var(--font-sans)', marginBottom: '6px' }}>
+            ★ Priority parts could not be placed
+          </p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            {result.priorityWarnings.map((w, i) => (
+              <li key={i} style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-sans)' }}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Partial errors warning */}
       {result.errors.length > 0 && (

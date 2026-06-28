@@ -53,6 +53,10 @@ export default function PartsTable({ parts, unit, onChange }: PartsTableProps) {
     onChange(parts.map(p => p.id === id ? { ...p, [field]: value } : p))
   }
 
+  function togglePriority(id: string) {
+    onChange(parts.map(p => p.id === id ? { ...p, priority: !p.priority } : p))
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -84,6 +88,9 @@ export default function PartsTable({ parts, unit, onChange }: PartsTableProps) {
                 Width <span style={{ fontFamily: 'var(--font-mono)', opacity: 0.7 }}>({unit})</span>
               </th>
               <th style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 500, textAlign: 'left', paddingBottom: '6px', paddingRight: '8px' }}>Qty</th>
+              <th style={{ paddingBottom: '6px', width: '28px', textAlign: 'center' }} title="Priority — prioritized parts are placed first">
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>★</span>
+              </th>
               <th style={{ paddingBottom: '6px', width: '24px' }} />
             </tr>
           </thead>
@@ -134,6 +141,27 @@ export default function PartsTable({ parts, unit, onChange }: PartsTableProps) {
                     value={part.quantity}
                     onChange={e => updateField(part.id, 'quantity', parseInt(e.target.value, 10) || 1)}
                   />
+                </td>
+                <td style={{ paddingTop: '3px', paddingBottom: '3px', textAlign: 'center' }}>
+                  <button
+                    onClick={() => togglePriority(part.id)}
+                    title={part.priority ? 'Priority on — click to remove' : 'Click to prioritize'}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      lineHeight: 1,
+                      padding: '0 4px',
+                      color: part.priority ? 'var(--color-amber)' : 'var(--color-text-muted)',
+                      opacity: part.priority ? 1 : 0.4,
+                      transition: 'color 150ms ease, opacity 150ms ease',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = part.priority ? '1' : '0.4' }}
+                  >
+                    ★
+                  </button>
                 </td>
                 <td style={{ paddingTop: '3px', paddingBottom: '3px', textAlign: 'center' }}>
                   <button

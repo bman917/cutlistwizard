@@ -32,6 +32,7 @@ export interface OptimizeResult {
   totalSheets: number
   overallWastePercent: number
   errors: string[]
+  priorityWarnings: string[]
 }
 
 interface FreeSection {
@@ -46,6 +47,7 @@ interface ExpandedPart {
   label: string
   width: number
   height: number
+  priority?: boolean
 }
 
 interface OpenSheet {
@@ -366,6 +368,8 @@ interface RunResult {
   overallWastePercent: number
   errors: string[]
   unplacedCount: number
+  unplacedPriorityCount: number
+  priorityWarnings: string[]
   groupingScore: number // sum over labels of distinct sheets they appear on; lower = more grouped
 }
 
@@ -405,23 +409,50 @@ function runGreedy(
     }
   }
 
-  let unplacedCount = 0
+  // Priority parts go first; relative sort order within each group is preserved.
+  const orderedFittable = [
+    ...fittable.filter(p => p.priority),
+    ...fittable.filter(p => !p.priority),
+  ]
 
-  for (const part of fittable) {
+  let unplacedCount = 0
+  let unplacedPriorityCount = 0
+  const priorityWarnings: string[] = []
+  const reportedPriorityUnplaced = new Set<string>()
+
+  for (const part of orderedFittable) {
     let placement = findBestPlacement(openSheets, part, allowRotation, rule, groupBias)
 
     if (placement === null) {
       const newSheet = openNewSheet(budgets, part, trimPerEdge, allowRotation, sheetCounts)
       if (newSheet === null) {
         unplacedCount++
-        errors.push(`Part '${part.label}' (${part.width}x${part.height}) could not be placed — out of stock`)
+        if (part.priority) {
+          unplacedPriorityCount++
+          const key = `${part.partId}-${part.width}x${part.height}`
+          if (!reportedPriorityUnplaced.has(key)) {
+            priorityWarnings.push(`Priority part '${part.label}' (${part.width}×${part.height}) could not be placed — out of stock`)
+            reportedPriorityUnplaced.add(key)
+          }
+        } else {
+          errors.push(`Part '${part.label}' (${part.width}x${part.height}) could not be placed — out of stock`)
+        }
         continue
       }
       openSheets.push(newSheet)
       placement = findBestPlacement(openSheets, part, allowRotation, rule, groupBias)
       if (placement === null) {
         unplacedCount++
-        errors.push(`Part '${part.label}' (${part.width}x${part.height}) could not be placed on new sheet`)
+        if (part.priority) {
+          unplacedPriorityCount++
+          const key = `${part.partId}-${part.width}x${part.height}`
+          if (!reportedPriorityUnplaced.has(key)) {
+            priorityWarnings.push(`Priority part '${part.label}' (${part.width}×${part.height}) could not be placed on new sheet`)
+            reportedPriorityUnplaced.add(key)
+          }
+        } else {
+          errors.push(`Part '${part.label}' (${part.width}x${part.height}) could not be placed on new sheet`)
+        }
         continue
       }
     }
@@ -473,7 +504,7 @@ function runGreedy(
   let groupingScore = 0
   for (const set of labelSheets.values()) groupingScore += set.size
 
-  return { sheets: sheetResults, overallWastePercent, errors, unplacedCount, groupingScore }
+  return { sheets: sheetResults, overallWastePercent, errors, unplacedCount, unplacedPriorityCount, priorityWarnings, groupingScore }
 }
 
 function sortParts(parts: ExpandedPart[], strategy: number): ExpandedPart[] {
@@ -524,6 +555,9 @@ function isBetterResult(
   goal: CuttingParams['optimizationGoal'],
   groupParts: boolean
 ): boolean {
+  if (result.unplacedPriorityCount !== best.unplacedPriorityCount) {
+    return result.unplacedPriorityCount < best.unplacedPriorityCount
+  }
   if (result.unplacedCount !== best.unplacedCount) {
     return result.unplacedCount < best.unplacedCount
   }
@@ -554,16 +588,16 @@ export function optimize(
   const expanded: ExpandedPart[] = []
   for (const p of parts) {
     for (let i = 0; i < p.quantity; i++) {
-      expanded.push({ partId: p.id, label: p.label, width: p.width, height: p.height })
+      expanded.push({ partId: p.id, label: p.label, width: p.width, height: p.height, priority: p.priority })
     }
   }
 
   if (expanded.length === 0) {
-    return { sheets: [], totalSheets: 0, overallWastePercent: 0, errors: [] }
+    return { sheets: [], totalSheets: 0, overallWastePercent: 0, errors: [], priorityWarnings: [] }
   }
 
   if (stocks.length === 0) {
-    return { sheets: [], totalSheets: 0, overallWastePercent: 0, errors: ['No stock sheets defined'] }
+    return { sheets: [], totalSheets: 0, overallWastePercent: 0, errors: ['No stock sheets defined'], priorityWarnings: [] }
   }
 
   const fitRules: FitRule[] = ['bssf', 'baf', 'blsf']
@@ -599,5 +633,6 @@ export function optimize(
     totalSheets: finalResult.sheets.length,
     overallWastePercent: finalResult.overallWastePercent,
     errors: finalResult.errors,
+    priorityWarnings: finalResult.priorityWarnings,
   }
 }

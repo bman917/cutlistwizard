@@ -11,6 +11,7 @@ export interface Part {
   width: number
   height: number
   quantity: number
+  priority?: boolean
 }
 
 export interface CuttingParams {
